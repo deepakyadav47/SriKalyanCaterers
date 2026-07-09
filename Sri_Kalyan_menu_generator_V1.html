@@ -1,0 +1,1007 @@
+<!DOCTYPE html>
+<html lang="hi">
+<head>
+<meta charset="UTF-8">
+<title>Menu Card Generator</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+Devanagari:wght@400;600;700;900&family=Cormorant+Garamond:ital,wght@0,600;1,600&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --maroon:#5c1a24;
+    --maroon-deep:#3d0f16;
+    --gold:#b8894a;
+    --gold-light:#e9d3a3;
+    --cream:#faf6ee;
+    --ink:#2a1e14;
+    --line:#d8c9a8;
+  }
+  *{box-sizing:border-box;}
+  body{
+    margin:0; font-family:'Noto Sans Devanagari','Segoe UI',sans-serif;
+    background:var(--cream); color:var(--ink);
+  }
+  .app{max-width:1000px;margin:0 auto;padding:24px 16px 80px;}
+  .top-bar{display:flex;justify-content:space-between;align-items:flex-start;gap:16px;flex-wrap:wrap;margin-bottom:6px;}
+  h1.title{
+    font-family:'Cormorant Garamond',serif; font-style:italic; font-weight:600;
+    color:var(--maroon); font-size:2.1rem; margin:0 0 4px;
+  }
+  .sub{color:#7a6a52;margin:0 0 20px;font-size:.95rem;}
+  .btn-reset-top{background:#fff;border:1.5px solid #a04b4b;color:#a04b4b;padding:9px 16px;border-radius:6px;font-weight:700;white-space:nowrap;}
+  .btn-reset-top:hover{background:#fdecec;}
+  .order-badge{
+    background:var(--maroon-deep);color:#f4e6c8;padding:9px 16px;border-radius:6px;font-weight:700;
+    font-size:.85rem;white-space:nowrap;border:1px solid var(--gold);align-self:flex-start;
+  }
+  .folder-banner{
+    background:#fff8ea;border:1px solid var(--gold);border-radius:8px;padding:12px 16px;margin-bottom:14px;
+    display:flex;justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap;font-size:.85rem;color:#6b4a30;
+  }
+  .folder-banner .actions{display:flex;gap:8px;flex-wrap:wrap;}
+  .card{
+    background:#fff; border:1px solid var(--line); border-radius:10px;
+    padding:18px 20px; margin-bottom:18px; box-shadow:0 1px 3px rgba(60,30,10,.06);
+  }
+  .card h2{
+    font-size:1rem; letter-spacing:.03em; color:var(--maroon); margin:0 0 14px;
+    display:flex; align-items:center; gap:8px; text-transform:uppercase; font-weight:700;
+  }
+  .card h2::before{content:"";width:5px;height:16px;background:var(--gold);border-radius:2px;display:inline-block;}
+  .grid2{display:grid;grid-template-columns:1fr 1fr;gap:12px;}
+  label{display:block;font-size:.78rem;color:#7a6a52;margin-bottom:4px;font-weight:600;}
+  input[type=text],input[type=number],input[type=date],select,textarea{
+    width:100%;padding:9px 10px;border:1px solid var(--line);border-radius:6px;
+    font-family:inherit;font-size:.95rem;background:#fffdf9;
+  }
+  input:focus,select:focus,textarea:focus{outline:2px solid var(--gold-light);border-color:var(--gold);}
+  .field{margin-bottom:12px;}
+  .day-block{border:1px solid var(--line);border-radius:8px;padding:14px;margin-bottom:14px;background:#fffdf7;}
+  .day-block-head{display:flex;justify-content:space-between;align-items:center;gap:10px;margin-bottom:10px;}
+  .section-block{border-left:3px solid var(--gold);background:#fff;border-radius:0 6px 6px 0;padding:12px 14px;margin-bottom:10px;}
+  .section-head{display:flex;gap:10px;align-items:flex-end;margin-bottom:10px;flex-wrap:wrap;}
+  .section-head .field{flex:1;min-width:160px;margin-bottom:0;}
+  .section-actions{display:flex;gap:8px;align-items:center;}
+  .cat-tabs{display:flex;flex-wrap:wrap;gap:6px;margin-bottom:8px;}
+  .cat-tab{
+    padding:5px 10px;border:1px solid var(--line);border-radius:16px;font-size:.78rem;
+    cursor:pointer;background:#fff;color:#7a6a52;
+  }
+  .cat-tab.active{background:var(--maroon);color:#fff;border-color:var(--maroon);}
+  .item-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(160px,1fr));gap:6px 10px;max-height:220px;overflow:auto;padding:8px;border:1px solid var(--line);border-radius:6px;background:#fffefb;}
+  .item-opt{display:flex;align-items:center;gap:6px;font-size:.85rem;}
+  .item-opt input{width:auto;}
+  .chips{display:flex;flex-wrap:wrap;gap:6px;margin-top:8px;}
+  .chip{background:var(--gold-light);color:var(--maroon-deep);padding:4px 10px;border-radius:14px;font-size:.8rem;display:flex;gap:6px;align-items:center;}
+  .chip button{border:none;background:none;color:var(--maroon-deep);cursor:pointer;font-weight:700;padding:0;line-height:1;}
+  .add-custom{display:flex;gap:8px;margin-top:8px;}
+  .add-custom input{flex:1;}
+  button{
+    font-family:inherit;cursor:pointer;border:none;border-radius:6px;padding:8px 14px;font-size:.85rem;font-weight:600;
+  }
+  .btn-primary{background:var(--maroon);color:#fff;}
+  .btn-primary:hover{background:var(--maroon-deep);}
+  .btn-ghost{background:#fff;border:1px solid var(--gold);color:var(--maroon);}
+  .btn-ghost:hover{background:var(--gold-light);}
+  .btn-reset{background:#fff;border:1px solid #a04b4b;color:#a04b4b;padding:4px 10px;font-size:.75rem;}
+  .btn-reset:hover{background:#fdecec;}
+  .icon-btn{background:none;border:none;color:#a04b4b;font-size:1rem;cursor:pointer;}
+  .toolbar{display:flex;gap:10px;flex-wrap:wrap;margin:18px 0;}
+  .note{font-size:.78rem;color:#8a7a60;margin-top:6px;}
+
+  /* ---- Preview / print output ---- */
+  #previewWrap{margin-top:26px;}
+  .menu-page{
+    background:#fff;border:2.5px solid var(--maroon-deep);border-radius:2px;
+    padding:34px 40px;margin-bottom:26px;position:relative;
+  }
+  .menu-page::before{
+    content:"";position:absolute;inset:7px;border:1px solid var(--gold);pointer-events:none;
+  }
+  .corner{position:absolute;width:46px;height:46px;pointer-events:none;}
+  .corner svg{width:100%;height:100%;}
+  .corner-tl{top:10px;left:10px;}
+  .corner-tr{top:10px;right:10px;transform:scaleX(-1);}
+  .corner-bl{bottom:10px;left:10px;transform:scaleY(-1);}
+  .corner-br{bottom:10px;right:10px;transform:scale(-1,-1);}
+
+  .om-line{text-align:center;font-size:.85rem;color:var(--maroon);margin-bottom:6px;letter-spacing:.04em;}
+  .emblem{display:flex;justify-content:center;margin-bottom:6px;}
+  .emblem svg{width:44px;height:44px;}
+  .biz-name{text-align:center;font-family:'Cormorant Garamond',serif;font-weight:700;font-size:2.1rem;color:var(--maroon-deep);margin:0 0 2px;}
+  .biz-mob{text-align:center;font-size:.85rem;color:#5c1a24;margin-bottom:14px;font-weight:600;}
+  .head-row{display:flex;justify-content:space-between;align-items:flex-start;font-size:.92rem;margin-bottom:8px;gap:10px;}
+  .head-row .left,.head-row .right{width:30%;font-weight:700;color:var(--maroon-deep);}
+  .head-row .right{text-align:right;}
+  .head-row .center{text-align:center;width:40%;font-weight:700;color:var(--maroon-deep);}
+  .head-row .center .venue-sub{font-weight:700;font-size:.85rem;color:#6b4a30;}
+  .order-tag{font-weight:600;font-size:.72rem;color:#8a7a60;margin-top:3px;letter-spacing:.02em;}
+  .divider{display:flex;align-items:center;gap:10px;margin:10px 0 16px;}
+  .divider .ln{flex:1;height:1px;background:linear-gradient(90deg,transparent,var(--gold),transparent);}
+  .divider svg{width:16px;height:16px;flex-shrink:0;}
+  .menu-title-wrap{text-align:center;margin:2px 0 18px;}
+  .menu-title{
+    font-family:'Cormorant Garamond',serif;font-style:italic;font-weight:600;font-size:1.35rem;
+    border-top:1px solid var(--maroon-deep);border-bottom:1px solid var(--maroon-deep);
+    display:inline-flex;align-items:center;gap:10px;padding:4px 26px;color:var(--maroon-deep);
+  }
+  .menu-title svg{width:16px;height:16px;}
+
+  .sections-flow{display:block;}
+  .sec{margin-bottom:18px;width:100%;}
+  .sec > h3{
+    font-size:1.05rem;color:var(--maroon-deep);margin:0 0 10px;font-weight:700;
+    display:flex;align-items:center;gap:7px;border-bottom:1.5px solid var(--gold);padding-bottom:5px;
+    break-after:avoid;
+  }
+  .sec > h3 svg{width:15px;height:15px;flex-shrink:0;}
+  .sec > h3 .mem{font-size:.82rem;font-weight:700;color:#6b4a30;}
+  .cat-group{margin:0 0 10px 4px;break-inside:avoid;}
+  .cat-group h4{
+    font-family:'Cormorant Garamond',serif;font-style:italic;font-weight:700;font-size:.86rem;
+    color:var(--gold);text-transform:uppercase;letter-spacing:.06em;margin:0 0 4px;
+    break-after:avoid;
+  }
+  .cat-group ul{list-style:none;margin:0;padding:0;display:flex;flex-wrap:wrap;column-gap:26px;row-gap:5px;}
+  .cat-group li{font-size:.9rem;white-space:nowrap;}
+  .cat-group li::before{content:"◆ ";color:var(--gold);font-size:.65rem;vertical-align:middle;}
+  .footer-line{border-top:1px solid var(--line);margin-top:14px;padding-top:8px;font-size:.86rem;font-weight:700;color:var(--maroon-deep);text-align:center;}
+
+  @media print{
+    body{background:#fff;}
+    .app > *:not(#previewWrap){display:none !important;}
+    .toolbar{display:none !important;}
+    .menu-page{break-after:page;box-shadow:none;}
+  }
+</style>
+</head>
+<body>
+<div class="app">
+  <div class="top-bar">
+    <div>
+      <h1 class="title">Menu Card Generator</h1>
+      <p class="sub">Tick the dishes served at each meal — a client-ready menu card generates instantly, formatted the same way as your printed sheets.</p>
+    </div>
+    <div id="orderIdBadge" class="order-badge">ऑर्डर आईडी: —</div>
+  </div>
+
+  <div class="card" style="padding:14px 20px;">
+    <div style="display:flex;gap:10px;flex-wrap:wrap;align-items:flex-end;">
+      <div class="field" style="margin:0;flex:1;min-width:180px;">
+        <label>ऑर्डर आईडी से खोजें</label>
+        <input type="text" id="orderIdSearch" placeholder="जैसे ORD-0007 या 7" onkeydown="if(event.key==='Enter') searchOrderById();">
+      </div>
+      <button class="btn-ghost" onclick="searchOrderById()">🔍 खोजें</button>
+      <select id="draftSelect" onchange="onDraftSelect(this.value)" style="padding:9px 10px;border:1px solid var(--line);border-radius:6px;font-family:inherit;font-size:.85rem;background:#fffdf9;max-width:220px;">
+        <option value="">📂 सभी सेव किए ऑर्डर…</option>
+      </select>
+      <button class="btn-ghost" onclick="saveDraft()">💾 Save Draft</button>
+      <button class="btn-reset" style="padding:9px 12px;" onclick="deleteSelectedDraft()">🗑 Delete Selected</button>
+      <button class="btn-reset-top" onclick="resetAll()">↺ Reset — New Client</button>
+    </div>
+  </div>
+
+  <div id="folderBanner"></div>
+
+  <div class="top-bar" style="margin-top:-6px;">
+    <p class="note" id="storageStatus" style="margin:0;">Saved clients are stored in this browser only. Use Backup below to keep a safety copy or move to another device.</p>
+    <div style="display:flex;gap:10px;flex-wrap:wrap;">
+      <button class="btn-ghost" onclick="chooseFolder()">📁 Save Folder Choose करें</button>
+      <button class="btn-ghost" onclick="exportBackup()">⬇ Backup All Clients</button>
+      <button class="btn-ghost" onclick="document.getElementById('importFile').click()">⬆ Restore Backup</button>
+      <input type="file" id="importFile" accept=".json" style="display:none;" onchange="importBackup(this.files[0])">
+    </div>
+  </div>
+
+  <div class="card">
+    <h2>Business & Client Details</h2>
+    <div class="grid2">
+      <div class="field"><label>Business Name</label><input id="bizName" type="text" autocomplete="off" value="श्री कल्याण कैटर्स"></div>
+      <div class="field"><label>Mobile Numbers</label><input id="bizMob" type="text" autocomplete="off" value="Mob. : 9829730932, 9461456136"></div>
+      <div class="field"><label>Client Name</label><input id="clientName" type="text" autocomplete="off" placeholder=""></div>
+      <div class="field"><label>Venue Name</label><input id="venueName" type="text" autocomplete="off" placeholder=""></div>
+      <div class="field" style="grid-column:1/-1;"><label>Venue Address</label><input id="venueAddr" type="text" autocomplete="off" placeholder=""></div>
+    </div>
+  </div>
+
+  <div id="daysWrap"></div>
+
+  <div class="toolbar">
+    <button class="btn-ghost" onclick="addDay()">+ Add Date</button>
+    <button class="btn-primary" onclick="renderPreview()">Generate Menu Card</button>
+  </div>
+
+  <div id="previewWrap"></div>
+</div>
+
+<script>
+const BASE_CATALOG = {
+  "फ्लोटिंग / पेय / सूप": ["फ्रेश औरेन्ज ज्यूस","पानी नारियल","शाही गुलाब शेक","चॉको ओरियो शेक","वर्जिन मोजितो","ग्रीन हल्क","पिंक लेडी","काला खट्टा संगाती","किन्नू ज्यूस","वाटर मेलन ज्यूस","पाइनेप्पल किवी ज्यूस","केसर खजूर शेक","ब्राउनी वालनट शेक","केसर बादाम शेक","टमेटो सूप","राजस्थानी सूप","मनचाऊ सूप","हॉट एण्ड सोर सूप","टमाटर शोरबा","कॉफी","चाय","पानी 200 ML"],
+  "स्नैक्स / स्टार्टर": ["चना जोर गरम","रोस्टेड मूंगफली","पनीर 65","पनीर 110","स्प्रिंग रोल","पी.पी. समोसा","केसर स्टिक","क्रिस्पी पनीर","जापानी पेटीज","मटर पोटली","चीज बॉल","स्टिक बर्फी","हरा भरा कबाब","चीज सिगार","दही कबाब","रेलीनोज","पाइनेप्पल संदेश"],
+  "लाइव स्टॉल": ["पानी पताशी","मटर टिकिया","पनीर चिला","सिगड़ी डोसा","दही का राजभोग","वेज चाउमीन","केसर पिस्ता आइसक्रीम","पास्ता रेड एण्ड व्हाईट","थिन क्रस्ट पिज्जा","गार्लिक ब्रेड","मोमोज स्टेशन","बार-बी-क्यू (पनीर, कटहल, सेब, गोभी, अमरूद)","मुरादाबादी दाल विथ पापड़ी","फ्रेश फ्रूट काउन्टर","पनीर जलेबी","केसर मलाई दूध","टनटन कुल्फी","लखनवी थाल"],
+  "सब्जियाँ": ["छोला भटूरा","पत्ता गोभी मटर","कढ़ी पकौड़ा","राजमा मसाला","कढ़ाई पनीर","आलू गोभी साग","क्रीम बटर दाल मखनी","मटर पनीर","बीकानेरी गट्टा मिर्ची","भिण्डी मसाला","पनीर बटर मसाला","मिक्स वेज","अकबरी कोफ्ता (पालक ग्रेवी)","तवा वेज लाइव","पनीर टडाटड लाइव","गार्डन सरप्राइज","मटर मशरूम","हरा चना काला अंगूर","स्पेनिश चीज कॉर्न पालक","चाणक्य स्पेशल व्हाईट ग्रेवी","ग्रीन वैली लाइव","शाही पनीर"],
+  "दाल": ["दाल फ्राई (सादा लसन प्याज)","मुरादाबादी दाल","दाल पंचमेला","दाल तड़का"],
+  "राईस": ["लेमन राईस","जीरा राईस","केसरिया चावल","नमकीन चावल","मटर पुलाव","स्टीम राईस","हैदराबादी बिरयानी"],
+  "रोटियाँ": ["तवा चपाती","मिस्सी रोटी","तंदूरी रोटी","बटर नॉन","स्टफ्ड नॉन","रेशमी लच्छा पराठा","जंगली रोटी"],
+  "दही / रायता": ["बूंदी रायता","वेजिटेबल रायता","शेखावटी दही बड़ा","जयपुरी दही बड़ा","दही गुंजी","बथुआ रायता","पाइनेप्पल रायता","दही कटोरी"],
+  "चटनी": ["ग्रीन चटनी","नारियल चटनी","धनिया चटनी","लसन चटनी","नवरतन चटनी"],
+  "पापड़ स्टेशन": ["पोला पापड़","रोस्टेड पापड़","मसाला पापड़","डिस्को पापड़"],
+  "सलाद": ["सलाद","ग्रीन सलाद","अंकुरित सलाद","रशियन सलाद","मेक्रोनी सलाद","सिरका प्याज","ककड़ी अंगूर"],
+  "आचार": ["आचार","मिक्स आचार","आम का आचार","कैर का आचार","मीठा नींबू का आचार","अथाणिया मिर्च"],
+  "स्वीट": ["फ्रूट क्रीम","स्पंज रसगुल्ला","मूंग दाल हलवा","नटराज जामुन","बटर स्कॉच आइसक्रीम","केसर बादाम मिश्री मावा","स्पंज राजभोग","रसमलाई","काजू कतली","गुलाब जामुन","केसरिया जलेबी","काजू अंजीर हलवा","काजू गुलकंद सैंडविच","अनुरोध (मिट्टी कटोरी)","मूंग बादाम हलवा","अखरोट हलवा","बेक्ड मालपुआ","गुलकंद गुलाब जामुन","अनारकली","चाइनीज रसगुल्ला","अमृत भोग","सीजलिंग ब्राउनी विथ आइसक्रीम","चॉकलेट पेस्ट्री","पाइनेप्पल पेस्ट्री"],
+  "नमकीन महफ़िल": ["नमकीन","मिक्स नमकीन","रतलामी सेव","टनटन","टेस्टी","जयपुरी हींग कचोरी","मल्का मसूर","ड्राई फ्रूट लच्छा","नवरतन रिमझिम (काजू वाली)"],
+  "राजस्थानी स्पेशल": ["बाजरा रोटी","अजवाइन रोटी","आलू प्याज सब्जी","खेजड़ा सब्जी","फोफलिया सब्जी","सरवोड़ी सब्जी","कैरी लूंजी","हींग कढ़ी","कैर सांगरी","बीकानेरी बड़ी गुंदली","दाख दाना मेथी","ग्वारफली कचरी","गुड़ का गलवानिया","बाजरा खिचड़ी","गुड़ घी मक्खन बूरा","नखराली चटनी","कुंडा दही","बिलौना छाछ"],
+  "रामबाबू पराठा": ["मेथी पराठा","पनीर पराठा","करेला पराठा","मिक्स पराठा"],
+  "ब्रेकफास्ट": ["गरम जलेबी","केसरिया दूध (कुल्हड़ में)","आलू कोफ्ता","पोहा","खमण ढोकला","वेज सेण्डविच","इडली सांभर","ब्रेड बटर जैम","फ्रूट्स 3 प्रकार","कॉर्नफ्लैक्स","रबड़ी इमरती","छैना टोस्ट","वेज उत्तपम","मसाला डोसा","कोईन इडली फ्राई","कढ़ी कचोरी","मखनिया लस्सी","वेजिटेबल पकौड़ी","मिर्ची बड़ा","ब्रेड पकौड़ा","पनीर पकौड़ा"]
+};
+const MEAL_NAMES = ["ब्रेकफास्ट","लंच","हल्दी","डिनर","भात नाश्ता","भात के समय","संगीत","फुल डे काउंटर","अन्य"];
+const HINDI_MONTHS = ["जनवरी","फरवरी","मार्च","अप्रैल","मई","जून","जुलाई","अगस्त","सितम्बर","अक्टूबर","नवम्बर","दिसम्बर"];
+
+let CATALOG = JSON.parse(JSON.stringify(BASE_CATALOG));
+let dayCounter=0, secCounter=0;
+const STORAGE_KEY = 'custom_catalog_v1';
+
+// ---------- Storage adapter ----------
+// window.storage only exists inside Claude.ai's artifact viewer. Once this file is
+// downloaded and opened directly in a browser (the normal way to use this tool),
+// we fall back to the browser's own localStorage so Save/Load still works.
+const HAS_NATIVE_STORAGE = (typeof window.storage !== 'undefined') && window.storage && typeof window.storage.get === 'function';
+
+const storageAdapter = {
+  async get(key, shared=false){
+    if(HAS_NATIVE_STORAGE) return await window.storage.get(key, shared);
+    const raw = localStorage.getItem(key);
+    if(raw===null) throw new Error('not found');
+    return { key, value: raw, shared };
+  },
+  async set(key, value, shared=false){
+    if(HAS_NATIVE_STORAGE) return await window.storage.set(key, value, shared);
+    localStorage.setItem(key, value);
+    return { key, value, shared };
+  },
+  async delete(key, shared=false){
+    if(HAS_NATIVE_STORAGE) return await window.storage.delete(key, shared);
+    localStorage.removeItem(key);
+    return { key, deleted:true, shared };
+  },
+  async list(prefix='', shared=false){
+    if(HAS_NATIVE_STORAGE) return await window.storage.list(prefix, shared);
+    const keys = [];
+    for(let i=0;i<localStorage.length;i++){
+      const k = localStorage.key(i);
+      if(k && k.startsWith(prefix)) keys.push(k);
+    }
+    return { keys, prefix, shared };
+  }
+};
+
+// ---------- Optional local-folder storage (File System Access API) ----------
+// Supported only on desktop Chrome/Edge over a secure context. Where unavailable,
+// everything transparently keeps using storageAdapter (browser storage) above.
+const FOLDER_API_SUPPORTED = ('showDirectoryPicker' in window);
+let dirHandle = null;
+let folderModeActive = false;
+
+function idbOpen(){
+  return new Promise((resolve,reject)=>{
+    const req = indexedDB.open('menuGenDB', 1);
+    req.onupgradeneeded = ()=> req.result.createObjectStore('handles');
+    req.onsuccess = ()=> resolve(req.result);
+    req.onerror = ()=> reject(req.error);
+  });
+}
+async function idbGet(key){
+  const db = await idbOpen();
+  return new Promise((resolve,reject)=>{
+    const tx = db.transaction('handles','readonly');
+    const req = tx.objectStore('handles').get(key);
+    req.onsuccess = ()=> resolve(req.result || null);
+    req.onerror = ()=> reject(req.error);
+  });
+}
+async function idbSet(key, val){
+  const db = await idbOpen();
+  return new Promise((resolve,reject)=>{
+    const tx = db.transaction('handles','readwrite');
+    tx.objectStore('handles').put(val, key);
+    tx.oncomplete = ()=> resolve();
+    tx.onerror = ()=> reject(tx.error);
+  });
+}
+
+async function folderWriteOrder(orderId, jsonStr){
+  const fh = await dirHandle.getFileHandle(`order_${orderId}.json`, {create:true});
+  const w = await fh.createWritable();
+  await w.write(jsonStr);
+  await w.close();
+}
+async function folderReadOrder(orderId){
+  try{
+    const fh = await dirHandle.getFileHandle(`order_${orderId}.json`);
+    const file = await fh.getFile();
+    return await file.text();
+  }catch(e){ return null; }
+}
+async function folderDeleteOrder(orderId){
+  try{ await dirHandle.removeEntry(`order_${orderId}.json`); }catch(e){}
+}
+async function folderListOrders(){
+  const out = [];
+  for await (const [name, handle] of dirHandle.entries()){
+    if(handle.kind==='file' && name.startsWith('order_') && name.endsWith('.json')){
+      try{
+        const file = await handle.getFile();
+        const st = JSON.parse(await file.text());
+        out.push(st);
+      }catch(e){ /* skip unreadable file */ }
+    }
+  }
+  return out;
+}
+
+function setStorageStatus(text){
+  const el = document.getElementById('storageStatus');
+  if(el) el.textContent = text;
+}
+
+async function chooseFolder(){
+  if(!FOLDER_API_SUPPORTED){
+    alert('यह सुविधा केवल Desktop Chrome/Edge ब्राउज़र में उपलब्ध है। इस डिवाइस/ब्राउज़र में ऑर्डर ब्राउज़र स्टोरेज में सेव होते रहेंगे।');
+    return;
+  }
+  try{
+    const handle = await window.showDirectoryPicker({mode:'readwrite'});
+    await idbSet('draftsDir', handle);
+    dirHandle = handle; folderModeActive = true;
+    localStorage.setItem('folder_declined',''); // clear any earlier decline
+    document.getElementById('folderBanner').innerHTML='';
+    setStorageStatus(`ऑर्डर अब इस फ़ोल्डर में सेव हो रहे हैं: "${handle.name}"`);
+    await loadDraftList();
+  }catch(e){ /* user cancelled the picker */ }
+}
+
+async function initFolderMode(){
+  if(!FOLDER_API_SUPPORTED) return;
+  try{
+    const handle = await idbGet('draftsDir');
+    if(!handle){
+      // Offer once, non-intrusively, if not already declined
+      if(localStorage.getItem('folder_declined')!=='1'){
+        showFolderOfferBanner();
+      }
+      return;
+    }
+    const perm = await handle.queryPermission({mode:'readwrite'});
+    if(perm === 'granted'){
+      dirHandle = handle; folderModeActive = true;
+      setStorageStatus(`ऑर्डर अभी इस फ़ोल्डर में सेव हो रहे हैं: "${handle.name}"`);
+    } else {
+      showFolderReconnectBanner(handle);
+    }
+  }catch(e){ /* ignore — fall back to browser storage */ }
+}
+
+function showFolderOfferBanner(){
+  const el = document.getElementById('folderBanner');
+  el.innerHTML = `
+    <div class="folder-banner">
+      <span>क्या आप सभी ऑर्डर अपने कंप्यूटर के किसी फ़ोल्डर में सेव करना चाहेंगे? (केवल Desktop Chrome/Edge पर उपलब्ध)</span>
+      <div class="actions">
+        <button class="btn-ghost" onclick="chooseFolder()">📁 फ़ोल्डर चुनें</button>
+        <button class="btn-reset" onclick="document.getElementById('folderBanner').innerHTML='';localStorage.setItem('folder_declined','1');">नहीं, ब्राउज़र में रखें</button>
+      </div>
+    </div>`;
+}
+
+function showFolderReconnectBanner(handle){
+  const el = document.getElementById('folderBanner');
+  el.innerHTML = `
+    <div class="folder-banner">
+      <span>आपका सेव फ़ोल्डर "${handle.name}" दोबारा कनेक्ट करना होगा।</span>
+      <div class="actions">
+        <button class="btn-ghost" onclick="reconnectFolder()">🔓 फ़ोल्डर दोबारा जोड़ें</button>
+      </div>
+    </div>`;
+}
+
+async function reconnectFolder(){
+  try{
+    const handle = await idbGet('draftsDir');
+    if(!handle) return;
+    const perm = await handle.requestPermission({mode:'readwrite'});
+    if(perm==='granted'){
+      dirHandle = handle; folderModeActive = true;
+      document.getElementById('folderBanner').innerHTML='';
+      setStorageStatus(`ऑर्डर अब इस फ़ोल्डर में सेव हो रहे हैं: "${handle.name}"`);
+      await loadDraftList();
+    }
+  }catch(e){ /* ignore */ }
+}
+
+// ---------- Unified order storage (folder if connected, else browser storage) ----------
+async function writeOrder(orderId, jsonStr){
+  if(folderModeActive) return folderWriteOrder(orderId, jsonStr);
+  return storageAdapter.set('draft:'+orderId, jsonStr, false);
+}
+async function readOrder(orderId){
+  if(folderModeActive){
+    const txt = await folderReadOrder(orderId);
+    if(txt===null) throw new Error('not found');
+    return txt;
+  }
+  const r = await storageAdapter.get('draft:'+orderId, false);
+  return r.value;
+}
+async function deleteOrderStore(orderId){
+  if(folderModeActive) return folderDeleteOrder(orderId);
+  return storageAdapter.delete('draft:'+orderId, false);
+}
+async function listOrders(){
+  if(folderModeActive) return await folderListOrders();
+  const res = await storageAdapter.list('draft:', false);
+  const keys = (res && res.keys) || [];
+  const out = [];
+  for(const k of keys){
+    try{ const r = await storageAdapter.get(k, false); out.push(JSON.parse(r.value)); }catch(e){}
+  }
+  return out;
+}
+
+// ---------- Sequential Order ID ----------
+async function readSeq(){
+  try{
+    if(folderModeActive){
+      const fh = await dirHandle.getFileHandle('_seq.json');
+      const file = await fh.getFile();
+      return JSON.parse(await file.text()).seq || 0;
+    }
+    const r = await storageAdapter.get('order_id_seq', false);
+    return JSON.parse(r.value).seq || 0;
+  }catch(e){ return 0; }
+}
+async function writeSeq(seq){
+  if(folderModeActive){
+    const fh = await dirHandle.getFileHandle('_seq.json', {create:true});
+    const w = await fh.createWritable();
+    await w.write(JSON.stringify({seq}));
+    await w.close();
+  } else {
+    await storageAdapter.set('order_id_seq', JSON.stringify({seq}), false);
+  }
+}
+async function nextOrderId(){
+  const seq = (await readSeq()) + 1;
+  await writeSeq(seq);
+  return 'ORD-' + String(seq).padStart(4,'0');
+}
+
+let currentOrderId = null;
+function updateOrderIdBadge(){
+  document.getElementById('orderIdBadge').textContent = 'ऑर्डर आईडी: ' + (currentOrderId || '—');
+}
+
+// ---------- ICONS (elegant line-art SVGs) ----------
+function cornerIconSVG(){
+  return `<svg viewBox="0 0 46 46" xmlns="http://www.w3.org/2000/svg" fill="none">
+    <path d="M2 44 C2 20 20 2 44 2" stroke="var(--gold)" stroke-width="1.4"/>
+    <path d="M2 34 C2 16 16 2 34 2" stroke="var(--gold)" stroke-width="0.9"/>
+    <circle cx="6" cy="40" r="1.8" fill="var(--gold)"/>
+    <circle cx="40" cy="6" r="1.8" fill="var(--gold)"/>
+  </svg>`;
+}
+// Premium medallion: folded hands (Namaste) inside a thin double circle border
+function emblemSVG(){
+  return `<svg viewBox="0 0 60 60" xmlns="http://www.w3.org/2000/svg" fill="none">
+    <circle cx="30" cy="30" r="27" stroke="var(--gold)" stroke-width="1"/>
+    <circle cx="30" cy="30" r="23" stroke="var(--gold)" stroke-width="0.6"/>
+    <g stroke="var(--gold)" stroke-width="1.3" stroke-linecap="round">
+      <path d="M30 44 C22 40 19 30 20 18 C24 22 27 26 30 30"/>
+      <path d="M30 44 C38 40 41 30 40 18 C36 22 33 26 30 30"/>
+      <path d="M20 18 C22 14 26 12 30 12 C30 18 30 24 30 30"/>
+      <path d="M40 18 C38 14 34 12 30 12 C30 18 30 24 30 30"/>
+      <line x1="24" y1="46" x2="36" y2="46"/>
+    </g>
+  </svg>`;
+}
+function dividerIconSVG(){
+  return `<svg viewBox="0 0 20 20" xmlns="http://www.w3.org/2000/svg" fill="none" stroke="var(--gold)" stroke-width="1.2">
+    <path d="M10 1 L14 10 L10 19 L6 10 Z"/>
+  </svg>`;
+}
+function titleFlourishSVG(){
+  return `<svg viewBox="0 0 20 20" xmlns="http://www.w3.org/2000/svg" fill="none" stroke="var(--gold)" stroke-width="1.1">
+    <path d="M2 10 Q10 2 18 10 Q10 18 2 10 Z"/>
+  </svg>`;
+}
+function leafIconSVG(){
+  return `<svg viewBox="0 0 20 20" xmlns="http://www.w3.org/2000/svg" fill="none" stroke="var(--gold)" stroke-width="1.3">
+    <path d="M3 17 C3 9 9 3 17 3 C17 11 11 17 3 17 Z"/>
+    <path d="M3 17 C7 13 11 9 17 3"/>
+  </svg>`;
+}
+
+// ---------- Storage ----------
+async function loadCustomCatalog(){
+  try{
+    const res = await storageAdapter.get(STORAGE_KEY, false);
+    if(res && res.value){
+      const custom = JSON.parse(res.value);
+      Object.keys(custom).forEach(cat=>{
+        if(!CATALOG[cat]) CATALOG[cat] = [];
+        custom[cat].forEach(it=>{ if(!CATALOG[cat].includes(it)) CATALOG[cat].push(it); });
+      });
+    }
+  }catch(e){ /* no saved data yet */ }
+}
+async function saveCustomItem(cat, item){
+  if(!CATALOG[cat]) CATALOG[cat]=[];
+  if(!CATALOG[cat].includes(item)) CATALOG[cat].push(item);
+  try{
+    const res = await storageAdapter.get(STORAGE_KEY, false);
+    let custom = {};
+    try{ if(res && res.value) custom = JSON.parse(res.value); }catch(e){}
+    if(!custom[cat]) custom[cat]=[];
+    if(!custom[cat].includes(item)) custom[cat].push(item);
+    await storageAdapter.set(STORAGE_KEY, JSON.stringify(custom), false);
+  }catch(e){ console.error('Could not save custom item', e); }
+}
+
+// ---------- Day / Section builders ----------
+function addDay(){
+  dayCounter++;
+  const id = 'day'+dayCounter;
+  const div = document.createElement('div');
+  div.className='day-block';
+  div.id=id;
+  div.innerHTML = `
+    <div class="day-block-head">
+      <div class="field" style="margin:0;flex:1;max-width:220px;">
+        <label>Date</label>
+        <input type="date" class="dayDate">
+      </div>
+      <button class="icon-btn" title="Remove date" onclick="document.getElementById('${id}').remove()">✕ Remove Date</button>
+    </div>
+    <div class="sectionsHolder"></div>
+    <button class="btn-ghost" onclick="addSection('${id}')">+ Add Meal Period</button>
+  `;
+  document.getElementById('daysWrap').appendChild(div);
+  addSection(id);
+  return id;
+}
+
+function addSection(dayId){
+  secCounter++;
+  const sid = 'sec'+secCounter;
+  const holder = document.querySelector('#'+dayId+' .sectionsHolder');
+  const wrap = document.createElement('div');
+  wrap.className='section-block';
+  wrap.id=sid;
+
+  let mealOpts = MEAL_NAMES.map(m=>`<option value="${m}">${m}</option>`).join('');
+  let catTabs = Object.keys(CATALOG).map((c,i)=>`<div class="cat-tab ${i===0?'active':''}" data-cat="${c}" onclick="switchCat('${sid}','${c}')">${c}</div>`).join('');
+
+  wrap.innerHTML = `
+    <div class="section-head">
+      <div class="field">
+        <label>Meal Period</label>
+        <select class="secName">${mealOpts}</select>
+      </div>
+      <div class="field" style="max-width:140px;">
+        <label>Members</label>
+        <input type="number" class="secMembers" autocomplete="off" placeholder="e.g. 100">
+      </div>
+      <div class="section-actions">
+        <button class="btn-reset" onclick="resetSection('${sid}')">↺ Reset Section</button>
+        <button class="icon-btn" title="Remove section" onclick="document.getElementById('${sid}').remove()">✕</button>
+      </div>
+    </div>
+    <div class="cat-tabs">${catTabs}</div>
+    <div class="item-grid" data-current-cat="${Object.keys(CATALOG)[0]}"></div>
+    <div class="add-custom">
+      <input type="text" class="customItemInput" autocomplete="off" placeholder="Add item not in list… (saved for future use)">
+      <button class="btn-ghost" onclick="addCustomItem('${sid}')">+ Add</button>
+    </div>
+    <div class="chips"></div>
+  `;
+  holder.appendChild(wrap);
+  switchCat(sid, Object.keys(CATALOG)[0]);
+}
+
+function rebuildAllCatTabs(){
+  document.querySelectorAll('.section-block').forEach(secEl=>{
+    const activeCat = secEl.querySelector('.item-grid').dataset.currentCat;
+    const tabsWrap = secEl.querySelector('.cat-tabs');
+    const sid = secEl.id;
+    tabsWrap.innerHTML = Object.keys(CATALOG).map(c=>
+      `<div class="cat-tab ${c===activeCat?'active':''}" data-cat="${c}" onclick="switchCat('${sid}','${c}')">${c}</div>`
+    ).join('');
+  });
+}
+
+function switchCat(sid, cat){
+  const secEl = document.getElementById(sid);
+  secEl.querySelectorAll('.cat-tab').forEach(t=>t.classList.toggle('active', t.dataset.cat===cat));
+  const grid = secEl.querySelector('.item-grid');
+  grid.dataset.currentCat = cat;
+  const chosen = getChosenSet(sid);
+  grid.innerHTML = CATALOG[cat].map(item=>{
+    const checked = chosen.has(item) ? 'checked' : '';
+    return `<label class="item-opt"><input type="checkbox" value="${item}" onchange="toggleChip('${sid}', this)" ${checked}> ${item}</label>`;
+  }).join('');
+}
+
+function getChosenSet(sid){
+  const secEl = document.getElementById(sid);
+  const set = new Set();
+  secEl.querySelectorAll('.chip').forEach(c=> set.add(c.dataset.item));
+  return set;
+}
+
+function toggleChip(sid, checkbox){
+  const secEl = document.getElementById(sid);
+  const chipsWrap = secEl.querySelector('.chips');
+  const item = checkbox.value;
+  const cat = checkbox.closest('.item-grid').dataset.currentCat;
+  if(checkbox.checked){
+    if(![...chipsWrap.children].some(c=>c.dataset.item===item)){
+      const chip = document.createElement('span');
+      chip.className='chip'; chip.dataset.item=item; chip.dataset.cat=cat;
+      chip.innerHTML = `${item} <button onclick="removeChip('${sid}','${item.replace(/'/g,"\\'")}')">×</button>`;
+      chipsWrap.appendChild(chip);
+    }
+  } else {
+    removeChip(sid, item, true);
+  }
+}
+
+function removeChip(sid, item, skipUncheck){
+  const secEl = document.getElementById(sid);
+  const chipsWrap = secEl.querySelector('.chips');
+  [...chipsWrap.children].forEach(c=>{ if(c.dataset.item===item) c.remove(); });
+  if(!skipUncheck){
+    secEl.querySelectorAll('.item-grid input[type=checkbox]').forEach(cb=>{
+      if(cb.value===item) cb.checked=false;
+    });
+  }
+}
+
+function resetSection(sid){
+  const secEl = document.getElementById(sid);
+  secEl.querySelector('.chips').innerHTML='';
+  secEl.querySelectorAll('.item-grid input[type=checkbox]').forEach(cb=> cb.checked=false);
+}
+
+async function addCustomItem(sid){
+  const secEl = document.getElementById(sid);
+  const input = secEl.querySelector('.customItemInput');
+  const val = input.value.trim();
+  if(!val) return;
+  const cat = secEl.querySelector('.item-grid').dataset.currentCat;
+
+  await saveCustomItem(cat, val);
+  rebuildAllCatTabs();
+  switchCat(sid, cat); // refresh grid to include new item
+
+  const cb = [...secEl.querySelectorAll('.item-grid input[type=checkbox]')].find(c=>c.value===val);
+  if(cb){ cb.checked = true; toggleChip(sid, cb); }
+  input.value='';
+}
+
+function formatHindiDate(isoDate){
+  if(!isoDate) return '—';
+  const [y,m,d] = isoDate.split('-').map(Number);
+  if(!y||!m||!d) return isoDate;
+  return `${d} ${HINDI_MONTHS[m-1]} ${y}`;
+}
+
+// ---------- Save / Load a client's menu (so feedback edits don't mean starting over) ----------
+function slugify(s){
+  return (s||'').trim().replace(/\s+/g,'_').replace(/[^\w\u0900-\u097F_-]/g,'') || ('client_'+Date.now());
+}
+
+function collectState(){
+  const days = [...document.querySelectorAll('.day-block')].map(dayEl=>{
+    const date = dayEl.querySelector('.dayDate').value;
+    const sections = [...dayEl.querySelectorAll('.section-block')].map(secEl=>{
+      const name = secEl.querySelector('.secName').value;
+      const members = secEl.querySelector('.secMembers').value;
+      const items = [...secEl.querySelectorAll('.chip')].map(c=>({item:c.dataset.item, cat:c.dataset.cat}));
+      return {name, members, items};
+    });
+    return {date, sections};
+  });
+  return {
+    orderId: currentOrderId,
+    bizName: document.getElementById('bizName').value,
+    bizMob: document.getElementById('bizMob').value,
+    clientName: document.getElementById('clientName').value,
+    venueName: document.getElementById('venueName').value,
+    venueAddr: document.getElementById('venueAddr').value,
+    days,
+    savedAt: new Date().toISOString()
+  };
+}
+
+function applyState(state){
+  currentOrderId = state.orderId || null;
+  updateOrderIdBadge();
+  document.getElementById('bizName').value = state.bizName || 'श्री कल्याण कैटर्स';
+  document.getElementById('bizMob').value = state.bizMob || '';
+  document.getElementById('clientName').value = state.clientName || '';
+  document.getElementById('venueName').value = state.venueName || '';
+  document.getElementById('venueAddr').value = state.venueAddr || '';
+  document.getElementById('daysWrap').innerHTML='';
+  document.getElementById('previewWrap').innerHTML='';
+
+  (state.days||[]).forEach(d=>{
+    const dayId = addDay();
+    const dayEl = document.getElementById(dayId);
+    dayEl.querySelector('.dayDate').value = d.date || '';
+    dayEl.querySelector('.sectionsHolder').innerHTML=''; // clear the auto-created first section, rebuild explicitly
+
+    (d.sections||[]).forEach(sec=>{
+      addSection(dayId);
+      const secEl = dayEl.querySelector('.sectionsHolder').lastElementChild;
+      secEl.querySelector('.secName').value = sec.name || '';
+      secEl.querySelector('.secMembers').value = sec.members || '';
+
+      (sec.items||[]).forEach(it=>{
+        if(CATALOG[it.cat] && CATALOG[it.cat].includes(it.item)){
+          switchCat(secEl.id, it.cat);
+          const cb = [...secEl.querySelectorAll('.item-grid input[type=checkbox]')].find(c=>c.value===it.item);
+          if(cb){ cb.checked = true; toggleChip(secEl.id, cb); return; }
+        }
+        // fallback: item no longer in catalog for some reason — still restore it as a chip
+        const chipsWrap = secEl.querySelector('.chips');
+        const chip = document.createElement('span');
+        chip.className='chip'; chip.dataset.item=it.item; chip.dataset.cat=it.cat;
+        chip.innerHTML = `${it.item} <button onclick="removeChip('${secEl.id}','${it.item.replace(/'/g,"\\'")}')">×</button>`;
+        chipsWrap.appendChild(chip);
+      });
+    });
+  });
+}
+
+// Saves the current form. If this is a brand-new order (never saved before), a new
+// sequential Order ID is generated. If an existing order was loaded (via search or the
+// dropdown), the SAME Order ID is reused and its saved file is simply overwritten.
+async function saveDraftSilent(){
+  if(!currentOrderId){
+    currentOrderId = await nextOrderId();
+    updateOrderIdBadge();
+  }
+  const state = collectState();
+  try{
+    await writeOrder(currentOrderId, JSON.stringify(state));
+    return currentOrderId;
+  }catch(e){ console.error('Save failed', e); return null; }
+}
+
+async function saveDraft(){
+  const wasNew = !currentOrderId;
+  const id = await saveDraftSilent();
+  if(id){
+    await loadDraftList(id);
+    alert(wasNew
+      ? `सेव हो गया। नया ऑर्डर आईडी: ${id}\nअगली बार इसी आईडी से इस ऑर्डर को खोज कर बदलाव कर सकते हैं।`
+      : `ऑर्डर ${id} अपडेट हो गया।`);
+  } else {
+    alert('Could not save — please try again.');
+  }
+}
+
+async function loadDraftList(selectId){
+  const sel = document.getElementById('draftSelect');
+  let options = '<option value="">📂 सभी सेव किए ऑर्डर…</option>';
+  try{
+    const orders = await listOrders();
+    orders
+      .sort((a,b)=> (b.savedAt||'').localeCompare(a.savedAt||'')) // most recently saved first
+      .forEach(st=>{
+        const label = `${st.orderId||'—'} · ${st.clientName||'—'}${st.venueName ? ' · '+st.venueName : ''}`;
+        options += `<option value="${st.orderId}">${label}</option>`;
+      });
+  }catch(e){ /* no orders saved yet */ }
+  sel.innerHTML = options;
+  if(selectId) sel.value = selectId;
+}
+
+async function exportBackup(){
+  try{
+    const orders = await listOrders();
+    const drafts = {};
+    orders.forEach(st=>{ if(st.orderId) drafts[st.orderId] = JSON.stringify(st); });
+    let customCatalog = null;
+    try{ const r = await storageAdapter.get(STORAGE_KEY, false); customCatalog = r.value; }catch(e){}
+    const seq = await readSeq();
+
+    const backup = { type:'menu_generator_backup', exportedAt: new Date().toISOString(), drafts, customCatalog, seq };
+    const blob = new Blob([JSON.stringify(backup, null, 2)], {type:'application/json'});
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    const stamp = new Date().toISOString().slice(0,10);
+    a.href = url; a.download = `menu_generator_backup_${stamp}.json`;
+    document.body.appendChild(a); a.click(); a.remove();
+    URL.revokeObjectURL(url);
+  }catch(e){
+    alert('Could not create backup — please try again.');
+  }
+}
+
+function importBackup(file){
+  if(!file) return;
+  const reader = new FileReader();
+  reader.onload = async (e)=>{
+    try{
+      const backup = JSON.parse(e.target.result);
+      if(!backup || backup.type!=='menu_generator_backup') throw new Error('invalid file');
+      const orderIds = Object.keys(backup.drafts||{});
+      for(const id of orderIds){
+        await writeOrder(id, backup.drafts[id]);
+      }
+      if(backup.customCatalog){
+        await storageAdapter.set(STORAGE_KEY, backup.customCatalog, false);
+        await loadCustomCatalog();
+        rebuildAllCatTabs();
+      }
+      if(backup.seq){ await writeSeq(Math.max(backup.seq, await readSeq())); }
+      await loadDraftList();
+      alert(`Restored ${orderIds.length} saved order(s) from backup.`);
+    }catch(err){
+      alert('This file could not be read as a valid backup.');
+    }
+  };
+  reader.readAsText(file);
+}
+
+async function deleteSelectedDraft(){
+  const sel = document.getElementById('draftSelect');
+  const id = sel.value;
+  if(!id){ alert('सूची से पहले कोई ऑर्डर चुनें, फिर डिलीट करें।'); return; }
+  const label = sel.options[sel.selectedIndex].text;
+  if(!confirm(`ऑर्डर "${label}" हमेशा के लिए हटाएँ? यह वापस नहीं आएगा।`)) return;
+  try{
+    await deleteOrderStore(id);
+    if(currentOrderId === id){ currentOrderId = null; updateOrderIdBadge(); }
+    await loadDraftList();
+  }catch(e){ alert('Could not delete — please try again.'); }
+}
+
+async function onDraftSelect(id){
+  if(!id) return;
+  try{
+    const jsonStr = await readOrder(id);
+    applyState(JSON.parse(jsonStr));
+  }catch(e){
+    alert('ऑर्डर आईडी उपलब्ध नहीं है');
+  }
+}
+
+async function searchOrderById(){
+  const input = document.getElementById('orderIdSearch');
+  let id = input.value.trim().toUpperCase();
+  if(!id) return;
+  if(!id.startsWith('ORD-')){
+    const num = id.replace(/\D/g,'');
+    if(!num){ alert('ऑर्डर आईडी उपलब्ध नहीं है'); return; }
+    id = 'ORD-' + num.padStart(4,'0');
+  }
+  try{
+    const jsonStr = await readOrder(id);
+    applyState(JSON.parse(jsonStr));
+    document.getElementById('draftSelect').value = id;
+    input.value='';
+  }catch(e){
+    alert('ऑर्डर आईडी उपलब्ध नहीं है');
+  }
+}
+
+async function startNewOrder(){
+  currentOrderId = await nextOrderId();
+  updateOrderIdBadge();
+  document.getElementById('clientName').value='';
+  document.getElementById('venueName').value='';
+  document.getElementById('venueAddr').value='';
+  document.getElementById('daysWrap').innerHTML='';
+  document.getElementById('previewWrap').innerHTML='';
+  addDay();
+}
+
+async function resetAll(){
+  if(!confirm('Clear client name, venue, dates and all meal selections to start a new client? A new Order ID will be assigned. (Business name & mobile will stay.)')) return;
+  await startNewOrder();
+}
+
+async function renderPreview(){
+  const bizName = document.getElementById('bizName').value;
+  const bizMob = document.getElementById('bizMob').value;
+  const clientName = document.getElementById('clientName').value;
+  const venueName = document.getElementById('venueName').value;
+  const venueAddr = document.getElementById('venueAddr').value;
+  const catOrder = Object.keys(CATALOG);
+
+  let pagesHtml = '';
+  document.querySelectorAll('.day-block').forEach(dayEl=>{
+    const rawDate = dayEl.querySelector('.dayDate').value;
+    const date = formatHindiDate(rawDate);
+    let secsHtml = '';
+    dayEl.querySelectorAll('.section-block').forEach(secEl=>{
+      const name = secEl.querySelector('.secName').value;
+      const members = secEl.querySelector('.secMembers').value;
+      const chips = [...secEl.querySelectorAll('.chip')];
+      if(chips.length===0) return;
+
+      // group chosen items by category, preserving catalog category order
+      const grouped = {};
+      chips.forEach(c=>{
+        const cat = c.dataset.cat || 'अन्य';
+        if(!grouped[cat]) grouped[cat]=[];
+        grouped[cat].push(c.dataset.item);
+      });
+      const orderedCats = [...catOrder.filter(c=>grouped[c]), ...Object.keys(grouped).filter(c=>!catOrder.includes(c))];
+
+      let groupsHtml = orderedCats.map(cat=>`
+        <div class="cat-group">
+          <h4>${cat}</h4>
+          <ul>${grouped[cat].map(i=>`<li>${i}</li>`).join('')}</ul>
+        </div>`).join('');
+
+      secsHtml += `
+        <div class="sec">
+          <h3>${leafIconSVG()} ${name} ${members ? `<span class="mem">( ${members} मैम्बर )</span>` : ''}</h3>
+          ${groupsHtml}
+        </div>`;
+    });
+    if(!secsHtml) return;
+    pagesHtml += `
+      <div class="menu-page">
+        <div class="corner corner-tl">${cornerIconSVG()}</div>
+        <div class="corner corner-tr">${cornerIconSVG()}</div>
+        <div class="corner corner-bl">${cornerIconSVG()}</div>
+        <div class="corner corner-br">${cornerIconSVG()}</div>
+
+        <div class="om-line">॥ श्री गणेशाय नम: ॥</div>
+        <div class="emblem">${emblemSVG()}</div>
+        <div class="biz-name">${bizName}</div>
+        <div class="biz-mob">${bizMob}</div>
+        <div class="head-row">
+          <div class="left">${clientName}</div>
+          <div class="center">${venueName}<div class="venue-sub">${venueAddr}</div></div>
+          <div class="right">${date}<div class="order-tag">Order: ${currentOrderId || '—'}</div></div>
+        </div>
+        <div class="divider">
+          <div class="ln"></div>${dividerIconSVG()}<div class="ln"></div>
+        </div>
+        <div class="menu-title-wrap">
+          <div class="menu-title">${titleFlourishSVG()} Menu ${titleFlourishSVG()}</div>
+        </div>
+        <div class="sections-flow">${secsHtml}</div>
+        <div class="footer-line">${bizName} &nbsp;•&nbsp; ${bizMob}</div>
+      </div>`;
+  });
+
+  const wrap = document.getElementById('previewWrap');
+  if(!pagesHtml){
+    wrap.innerHTML = '<p class="note">Add at least one date, a meal period, and tick some items first.</p>';
+    return;
+  }
+  wrap.innerHTML = pagesHtml + `
+    <div class="toolbar">
+      <button class="btn-primary" onclick="window.print()">🖨 Print / Save as PDF</button>
+    </div>`;
+  wrap.scrollIntoView({behavior:'smooth'});
+
+  // Auto-save so this client's menu can be reopened and edited later without re-selecting everything
+  const key = await saveDraftSilent();
+  if(key) loadDraftList(key);
+}
+
+// init
+(async function init(){
+  await loadCustomCatalog();
+  await initFolderMode();
+  await loadDraftList();
+  await startNewOrder();
+})();
+</script>
+</body>
+</html>
