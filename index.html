@@ -5,6 +5,11 @@
 <title>Menu Card Generator</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+Devanagari:wght@400;600;700;900&family=Cormorant+Garamond:ital,wght@0,600;1,600&display=swap" rel="stylesheet">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-auth-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore-compat.js"></script>
 <style>
   :root{
     --maroon:#5c1a24;
@@ -33,11 +38,6 @@
     background:var(--maroon-deep);color:#f4e6c8;padding:9px 16px;border-radius:6px;font-weight:700;
     font-size:.85rem;white-space:nowrap;border:1px solid var(--gold);align-self:flex-start;
   }
-  .folder-banner{
-    background:#fff8ea;border:1px solid var(--gold);border-radius:8px;padding:12px 16px;margin-bottom:14px;
-    display:flex;justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap;font-size:.85rem;color:#6b4a30;
-  }
-  .folder-banner .actions{display:flex;gap:8px;flex-wrap:wrap;}
   .card{
     background:#fff; border:1px solid var(--line); border-radius:10px;
     padding:18px 20px; margin-bottom:18px; box-shadow:0 1px 3px rgba(60,30,10,.06);
@@ -141,8 +141,8 @@
     color:var(--gold);text-transform:uppercase;letter-spacing:.06em;margin:0 0 4px;
     break-after:avoid;
   }
-  .cat-group ul{list-style:none;margin:0;padding:0;display:flex;flex-wrap:wrap;column-gap:26px;row-gap:5px;}
-  .cat-group li{font-size:.9rem;white-space:nowrap;}
+  .cat-group ul{list-style:none;margin:0;padding:0;column-count:2;column-gap:34px;}
+  .cat-group li{font-size:.9rem;break-inside:avoid;margin-bottom:6px;padding-right:6px;}
   .cat-group li::before{content:"◆ ";color:var(--gold);font-size:.65rem;vertical-align:middle;}
   .footer-line{border-top:1px solid var(--line);margin-top:14px;padding-top:8px;font-size:.86rem;font-weight:700;color:var(--maroon-deep);text-align:center;}
 
@@ -180,12 +180,9 @@
     </div>
   </div>
 
-  <div id="folderBanner"></div>
-
   <div class="top-bar" style="margin-top:-6px;">
-    <p class="note" id="storageStatus" style="margin:0;">Saved clients are stored in this browser only. Use Backup below to keep a safety copy or move to another device.</p>
+    <p class="note" id="storageStatus" style="margin:0;">कनेक्ट हो रहा है…</p>
     <div style="display:flex;gap:10px;flex-wrap:wrap;">
-      <button class="btn-ghost" onclick="chooseFolder()">📁 Save Folder Choose करें</button>
       <button class="btn-ghost" onclick="exportBackup()">⬇ Backup All Clients</button>
       <button class="btn-ghost" onclick="document.getElementById('importFile').click()">⬆ Restore Backup</button>
       <input type="file" id="importFile" accept=".json" style="display:none;" onchange="importBackup(this.files[0])">
@@ -195,8 +192,8 @@
   <div class="card">
     <h2>Business & Client Details</h2>
     <div class="grid2">
-      <div class="field"><label>Business Name</label><input id="bizName" type="text" autocomplete="off" value="श्री कल्याण कैटर्स"></div>
-      <div class="field"><label>Mobile Numbers</label><input id="bizMob" type="text" autocomplete="off" value="Mob. : 9829730932, 9461456136"></div>
+      <div class="field"><label>Business Name</label><input id="bizName" type="text" autocomplete="off" value="श्री कल्याण कैटर्स" readonly style="background:#f3ede1;color:#6b4a30;cursor:not-allowed;"></div>
+      <div class="field"><label>Mobile Numbers</label><input id="bizMob" type="text" autocomplete="off" value="Mob. : 9829730932, 9461456136" readonly style="background:#f3ede1;color:#6b4a30;cursor:not-allowed;"></div>
       <div class="field"><label>Client Name</label><input id="clientName" type="text" autocomplete="off" placeholder=""></div>
       <div class="field"><label>Venue Name</label><input id="venueName" type="text" autocomplete="off" placeholder=""></div>
       <div class="field" style="grid-column:1/-1;"><label>Venue Address</label><input id="venueAddr" type="text" autocomplete="off" placeholder=""></div>
@@ -238,240 +235,106 @@ const HINDI_MONTHS = ["जनवरी","फरवरी","मार्च","अ
 
 let CATALOG = JSON.parse(JSON.stringify(BASE_CATALOG));
 let dayCounter=0, secCounter=0;
-const STORAGE_KEY = 'custom_catalog_v1';
 
-// ---------- Storage adapter ----------
-// window.storage only exists inside Claude.ai's artifact viewer. Once this file is
-// downloaded and opened directly in a browser (the normal way to use this tool),
-// we fall back to the browser's own localStorage so Save/Load still works.
-const HAS_NATIVE_STORAGE = (typeof window.storage !== 'undefined') && window.storage && typeof window.storage.get === 'function';
-
-const storageAdapter = {
-  async get(key, shared=false){
-    if(HAS_NATIVE_STORAGE) return await window.storage.get(key, shared);
-    const raw = localStorage.getItem(key);
-    if(raw===null) throw new Error('not found');
-    return { key, value: raw, shared };
-  },
-  async set(key, value, shared=false){
-    if(HAS_NATIVE_STORAGE) return await window.storage.set(key, value, shared);
-    localStorage.setItem(key, value);
-    return { key, value, shared };
-  },
-  async delete(key, shared=false){
-    if(HAS_NATIVE_STORAGE) return await window.storage.delete(key, shared);
-    localStorage.removeItem(key);
-    return { key, deleted:true, shared };
-  },
-  async list(prefix='', shared=false){
-    if(HAS_NATIVE_STORAGE) return await window.storage.list(prefix, shared);
-    const keys = [];
-    for(let i=0;i<localStorage.length;i++){
-      const k = localStorage.key(i);
-      if(k && k.startsWith(prefix)) keys.push(k);
-    }
-    return { keys, prefix, shared };
-  }
+// ---------- Firebase (shared cloud storage — every device shows the same orders) ----------
+const firebaseConfig = {
+  apiKey: "AIzaSyDX8w1cyIGJ7-JfZYI6KRl02a8yVOAUnes",
+  authDomain: "shri-kalyan-caterers.firebaseapp.com",
+  projectId: "shri-kalyan-caterers",
+  storageBucket: "shri-kalyan-caterers.firebasestorage.app",
+  messagingSenderId: "1054069412159",
+  appId: "1:1054069412159:web:d2d371ab4225a79f77838a",
+  measurementId: "G-HQVE800QDN"
 };
+firebase.initializeApp(firebaseConfig);
+const db = firebase.firestore();
 
-// ---------- Optional local-folder storage (File System Access API) ----------
-// Supported only on desktop Chrome/Edge over a secure context. Where unavailable,
-// everything transparently keeps using storageAdapter (browser storage) above.
-const FOLDER_API_SUPPORTED = ('showDirectoryPicker' in window);
-let dirHandle = null;
-let folderModeActive = false;
-
-function idbOpen(){
-  return new Promise((resolve,reject)=>{
-    const req = indexedDB.open('menuGenDB', 1);
-    req.onupgradeneeded = ()=> req.result.createObjectStore('handles');
-    req.onsuccess = ()=> resolve(req.result);
-    req.onerror = ()=> reject(req.error);
-  });
-}
-async function idbGet(key){
-  const db = await idbOpen();
-  return new Promise((resolve,reject)=>{
-    const tx = db.transaction('handles','readonly');
-    const req = tx.objectStore('handles').get(key);
-    req.onsuccess = ()=> resolve(req.result || null);
-    req.onerror = ()=> reject(req.error);
-  });
-}
-async function idbSet(key, val){
-  const db = await idbOpen();
-  return new Promise((resolve,reject)=>{
-    const tx = db.transaction('handles','readwrite');
-    tx.objectStore('handles').put(val, key);
-    tx.oncomplete = ()=> resolve();
-    tx.onerror = ()=> reject(tx.error);
-  });
-}
-
-async function folderWriteOrder(orderId, jsonStr){
-  const fh = await dirHandle.getFileHandle(`order_${orderId}.json`, {create:true});
-  const w = await fh.createWritable();
-  await w.write(jsonStr);
-  await w.close();
-}
-async function folderReadOrder(orderId){
-  try{
-    const fh = await dirHandle.getFileHandle(`order_${orderId}.json`);
-    const file = await fh.getFile();
-    return await file.text();
-  }catch(e){ return null; }
-}
-async function folderDeleteOrder(orderId){
-  try{ await dirHandle.removeEntry(`order_${orderId}.json`); }catch(e){}
-}
-async function folderListOrders(){
-  const out = [];
-  for await (const [name, handle] of dirHandle.entries()){
-    if(handle.kind==='file' && name.startsWith('order_') && name.endsWith('.json')){
-      try{
-        const file = await handle.getFile();
-        const st = JSON.parse(await file.text());
-        out.push(st);
-      }catch(e){ /* skip unreadable file */ }
-    }
-  }
-  return out;
-}
+let authReadyResolve;
+const authReady = new Promise(res => { authReadyResolve = res; });
+firebase.auth().onAuthStateChanged(user=>{
+  if(user){ authReadyResolve(); }
+  else { firebase.auth().signInAnonymously().catch(e=>console.error('Sign-in failed', e)); }
+});
 
 function setStorageStatus(text){
   const el = document.getElementById('storageStatus');
   if(el) el.textContent = text;
 }
 
-async function chooseFolder(){
-  if(!FOLDER_API_SUPPORTED){
-    alert('यह सुविधा केवल Desktop Chrome/Edge ब्राउज़र में उपलब्ध है। इस डिवाइस/ब्राउज़र में ऑर्डर ब्राउज़र स्टोरेज में सेव होते रहेंगे।');
-    return;
+// ---------- Custom catalog (shared across every device via Firestore) ----------
+async function loadCustomCatalog(){
+  try{
+    await authReady;
+    const doc = await db.collection('meta').doc('customCatalog').get();
+    if(doc.exists){
+      const custom = doc.data() || {};
+      Object.keys(custom).forEach(cat=>{
+        if(!CATALOG[cat]) CATALOG[cat] = [];
+        (custom[cat]||[]).forEach(it=>{ if(!CATALOG[cat].includes(it)) CATALOG[cat].push(it); });
+      });
+    }
+    setStorageStatus('☁ ऑर्डर क्लाउड में सेव हो रहे हैं — फोन, टैबलेट और कंप्यूटर पर एक जैसे दिखेंगे।');
+  }catch(e){
+    console.error('Could not load catalog from cloud', e);
+    setStorageStatus('⚠ क्लाउड से कनेक्ट नहीं हो पाया — कृपया इंटरनेट कनेक्शन जाँचें।');
   }
+}
+async function saveCustomItem(cat, item){
+  if(!CATALOG[cat]) CATALOG[cat]=[];
+  if(!CATALOG[cat].includes(item)) CATALOG[cat].push(item);
   try{
-    const handle = await window.showDirectoryPicker({mode:'readwrite'});
-    await idbSet('draftsDir', handle);
-    dirHandle = handle; folderModeActive = true;
-    localStorage.setItem('folder_declined',''); // clear any earlier decline
-    document.getElementById('folderBanner').innerHTML='';
-    setStorageStatus(`ऑर्डर अब इस फ़ोल्डर में सेव हो रहे हैं: "${handle.name}"`);
-    await loadDraftList();
-  }catch(e){ /* user cancelled the picker */ }
+    await authReady;
+    await db.collection('meta').doc('customCatalog')
+      .set({ [cat]: firebase.firestore.FieldValue.arrayUnion(item) }, {merge:true});
+  }catch(e){ console.error('Could not save custom item to cloud', e); }
 }
 
-async function initFolderMode(){
-  if(!FOLDER_API_SUPPORTED) return;
-  try{
-    const handle = await idbGet('draftsDir');
-    if(!handle){
-      // Offer once, non-intrusively, if not already declined
-      if(localStorage.getItem('folder_declined')!=='1'){
-        showFolderOfferBanner();
-      }
-      return;
-    }
-    const perm = await handle.queryPermission({mode:'readwrite'});
-    if(perm === 'granted'){
-      dirHandle = handle; folderModeActive = true;
-      setStorageStatus(`ऑर्डर अभी इस फ़ोल्डर में सेव हो रहे हैं: "${handle.name}"`);
-    } else {
-      showFolderReconnectBanner(handle);
-    }
-  }catch(e){ /* ignore — fall back to browser storage */ }
-}
-
-function showFolderOfferBanner(){
-  const el = document.getElementById('folderBanner');
-  el.innerHTML = `
-    <div class="folder-banner">
-      <span>क्या आप सभी ऑर्डर अपने कंप्यूटर के किसी फ़ोल्डर में सेव करना चाहेंगे? (केवल Desktop Chrome/Edge पर उपलब्ध)</span>
-      <div class="actions">
-        <button class="btn-ghost" onclick="chooseFolder()">📁 फ़ोल्डर चुनें</button>
-        <button class="btn-reset" onclick="document.getElementById('folderBanner').innerHTML='';localStorage.setItem('folder_declined','1');">नहीं, ब्राउज़र में रखें</button>
-      </div>
-    </div>`;
-}
-
-function showFolderReconnectBanner(handle){
-  const el = document.getElementById('folderBanner');
-  el.innerHTML = `
-    <div class="folder-banner">
-      <span>आपका सेव फ़ोल्डर "${handle.name}" दोबारा कनेक्ट करना होगा।</span>
-      <div class="actions">
-        <button class="btn-ghost" onclick="reconnectFolder()">🔓 फ़ोल्डर दोबारा जोड़ें</button>
-      </div>
-    </div>`;
-}
-
-async function reconnectFolder(){
-  try{
-    const handle = await idbGet('draftsDir');
-    if(!handle) return;
-    const perm = await handle.requestPermission({mode:'readwrite'});
-    if(perm==='granted'){
-      dirHandle = handle; folderModeActive = true;
-      document.getElementById('folderBanner').innerHTML='';
-      setStorageStatus(`ऑर्डर अब इस फ़ोल्डर में सेव हो रहे हैं: "${handle.name}"`);
-      await loadDraftList();
-    }
-  }catch(e){ /* ignore */ }
-}
-
-// ---------- Unified order storage (folder if connected, else browser storage) ----------
-async function writeOrder(orderId, jsonStr){
-  if(folderModeActive) return folderWriteOrder(orderId, jsonStr);
-  return storageAdapter.set('draft:'+orderId, jsonStr, false);
+// ---------- Order storage (Firestore — one document per order, shared by all devices) ----------
+async function writeOrder(orderId, stateObj){
+  await authReady;
+  await db.collection('orders').doc(orderId).set(stateObj);
 }
 async function readOrder(orderId){
-  if(folderModeActive){
-    const txt = await folderReadOrder(orderId);
-    if(txt===null) throw new Error('not found');
-    return txt;
-  }
-  const r = await storageAdapter.get('draft:'+orderId, false);
-  return r.value;
+  await authReady;
+  const doc = await db.collection('orders').doc(orderId).get();
+  if(!doc.exists) throw new Error('not found');
+  return doc.data();
 }
 async function deleteOrderStore(orderId){
-  if(folderModeActive) return folderDeleteOrder(orderId);
-  return storageAdapter.delete('draft:'+orderId, false);
+  await authReady;
+  await db.collection('orders').doc(orderId).delete();
 }
 async function listOrders(){
-  if(folderModeActive) return await folderListOrders();
-  const res = await storageAdapter.list('draft:', false);
-  const keys = (res && res.keys) || [];
-  const out = [];
-  for(const k of keys){
-    try{ const r = await storageAdapter.get(k, false); out.push(JSON.parse(r.value)); }catch(e){}
-  }
-  return out;
+  await authReady;
+  const snap = await db.collection('orders').get();
+  return snap.docs.map(d=>d.data());
 }
 
-// ---------- Sequential Order ID ----------
-async function readSeq(){
-  try{
-    if(folderModeActive){
-      const fh = await dirHandle.getFileHandle('_seq.json');
-      const file = await fh.getFile();
-      return JSON.parse(await file.text()).seq || 0;
-    }
-    const r = await storageAdapter.get('order_id_seq', false);
-    return JSON.parse(r.value).seq || 0;
-  }catch(e){ return 0; }
-}
-async function writeSeq(seq){
-  if(folderModeActive){
-    const fh = await dirHandle.getFileHandle('_seq.json', {create:true});
-    const w = await fh.createWritable();
-    await w.write(JSON.stringify({seq}));
-    await w.close();
-  } else {
-    await storageAdapter.set('order_id_seq', JSON.stringify({seq}), false);
-  }
-}
+// ---------- Sequential Order ID (atomic across every device via a Firestore transaction) ----------
 async function nextOrderId(){
-  const seq = (await readSeq()) + 1;
-  await writeSeq(seq);
-  return 'ORD-' + String(seq).padStart(4,'0');
+  await authReady;
+  const seqRef = db.collection('meta').doc('orderSeq');
+  const newSeq = await db.runTransaction(async (tx)=>{
+    const doc = await tx.get(seqRef);
+    const current = doc.exists ? (doc.data().seq || 0) : 0;
+    const next = current + 1;
+    tx.set(seqRef, { seq: next });
+    return next;
+  });
+  return 'ORD-' + String(newSeq).padStart(4,'0');
+}
+
+async function getCurrentSeq(){
+  await authReady;
+  const doc = await db.collection('meta').doc('orderSeq').get();
+  return doc.exists ? (doc.data().seq || 0) : 0;
+}
+async function setSeqIfHigher(seq){
+  await authReady;
+  const current = await getCurrentSeq();
+  if(seq > current){
+    await db.collection('meta').doc('orderSeq').set({ seq });
+  }
 }
 
 let currentOrderId = null;
@@ -517,32 +380,6 @@ function leafIconSVG(){
     <path d="M3 17 C3 9 9 3 17 3 C17 11 11 17 3 17 Z"/>
     <path d="M3 17 C7 13 11 9 17 3"/>
   </svg>`;
-}
-
-// ---------- Storage ----------
-async function loadCustomCatalog(){
-  try{
-    const res = await storageAdapter.get(STORAGE_KEY, false);
-    if(res && res.value){
-      const custom = JSON.parse(res.value);
-      Object.keys(custom).forEach(cat=>{
-        if(!CATALOG[cat]) CATALOG[cat] = [];
-        custom[cat].forEach(it=>{ if(!CATALOG[cat].includes(it)) CATALOG[cat].push(it); });
-      });
-    }
-  }catch(e){ /* no saved data yet */ }
-}
-async function saveCustomItem(cat, item){
-  if(!CATALOG[cat]) CATALOG[cat]=[];
-  if(!CATALOG[cat].includes(item)) CATALOG[cat].push(item);
-  try{
-    const res = await storageAdapter.get(STORAGE_KEY, false);
-    let custom = {};
-    try{ if(res && res.value) custom = JSON.parse(res.value); }catch(e){}
-    if(!custom[cat]) custom[cat]=[];
-    if(!custom[cat].includes(item)) custom[cat].push(item);
-    await storageAdapter.set(STORAGE_KEY, JSON.stringify(custom), false);
-  }catch(e){ console.error('Could not save custom item', e); }
 }
 
 // ---------- Day / Section builders ----------
@@ -771,7 +608,7 @@ async function saveDraftSilent(){
   }
   const state = collectState();
   try{
-    await writeOrder(currentOrderId, JSON.stringify(state));
+    await writeOrder(currentOrderId, state);
     return currentOrderId;
   }catch(e){ console.error('Save failed', e); return null; }
 }
@@ -809,10 +646,13 @@ async function exportBackup(){
   try{
     const orders = await listOrders();
     const drafts = {};
-    orders.forEach(st=>{ if(st.orderId) drafts[st.orderId] = JSON.stringify(st); });
+    orders.forEach(st=>{ if(st.orderId) drafts[st.orderId] = st; });
     let customCatalog = null;
-    try{ const r = await storageAdapter.get(STORAGE_KEY, false); customCatalog = r.value; }catch(e){}
-    const seq = await readSeq();
+    try{
+      const catDoc = await db.collection('meta').doc('customCatalog').get();
+      customCatalog = catDoc.exists ? catDoc.data() : null;
+    }catch(e){}
+    const seq = await getCurrentSeq();
 
     const backup = { type:'menu_generator_backup', exportedAt: new Date().toISOString(), drafts, customCatalog, seq };
     const blob = new Blob([JSON.stringify(backup, null, 2)], {type:'application/json'});
@@ -839,11 +679,12 @@ function importBackup(file){
         await writeOrder(id, backup.drafts[id]);
       }
       if(backup.customCatalog){
-        await storageAdapter.set(STORAGE_KEY, backup.customCatalog, false);
+        await authReady;
+        await db.collection('meta').doc('customCatalog').set(backup.customCatalog, {merge:true});
         await loadCustomCatalog();
         rebuildAllCatTabs();
       }
-      if(backup.seq){ await writeSeq(Math.max(backup.seq, await readSeq())); }
+      if(backup.seq){ await setSeqIfHigher(backup.seq); }
       await loadDraftList();
       alert(`Restored ${orderIds.length} saved order(s) from backup.`);
     }catch(err){
@@ -869,8 +710,8 @@ async function deleteSelectedDraft(){
 async function onDraftSelect(id){
   if(!id) return;
   try{
-    const jsonStr = await readOrder(id);
-    applyState(JSON.parse(jsonStr));
+    const state = await readOrder(id);
+    applyState(state);
   }catch(e){
     alert('ऑर्डर आईडी उपलब्ध नहीं है');
   }
@@ -886,8 +727,8 @@ async function searchOrderById(){
     id = 'ORD-' + num.padStart(4,'0');
   }
   try{
-    const jsonStr = await readOrder(id);
-    applyState(JSON.parse(jsonStr));
+    const state = await readOrder(id);
+    applyState(state);
     document.getElementById('draftSelect').value = id;
     input.value='';
   }catch(e){
@@ -909,6 +750,76 @@ async function startNewOrder(){
 async function resetAll(){
   if(!confirm('Clear client name, venue, dates and all meal selections to start a new client? A new Order ID will be assigned. (Business name & mobile will stay.)')) return;
   await startNewOrder();
+}
+
+// Builds an actual PDF file (not just the print dialog) from the generated menu card(s)
+// and hands it to the device's native share sheet — WhatsApp, Telegram, Print, Save, etc.
+// Each date's card is sliced into as many A4-shaped pages as its content needs, so long
+// menus still paginate correctly instead of being squeezed into one tall image.
+async function shareMenu(){
+  const pageEls = [...document.querySelectorAll('#previewWrap .menu-page')];
+  if(!pageEls.length){ alert('पहले "Generate Menu Card" दबाएँ।'); return; }
+  if(typeof html2canvas === 'undefined' || !window.jspdf){
+    alert('शेयर फ़ीचर लोड नहीं हो पाया — कृपया इंटरनेट कनेक्शन जाँचें और पेज रीलोड करें।');
+    return;
+  }
+
+  const btn = document.getElementById('shareMenuBtn');
+  const original = btn.textContent;
+  btn.textContent = '⏳ तैयार हो रहा है…';
+  btn.disabled = true;
+
+  try{
+    if(document.fonts && document.fonts.ready) await document.fonts.ready;
+    const { jsPDF } = window.jspdf;
+    let pdf = null;
+    const A4_RATIO = 0.70707; // width / height
+
+    for(const pageEl of pageEls){
+      const canvas = await html2canvas(pageEl, { scale:2, backgroundColor:'#ffffff', useCORS:true });
+      const W = canvas.width, H = canvas.height;
+      const pageHpx = Math.round(W / A4_RATIO);
+      let y = 0;
+      while(y < H){
+        const sliceH = Math.min(pageHpx, H - y);
+        const sliceCanvas = document.createElement('canvas');
+        sliceCanvas.width = W; sliceCanvas.height = sliceH;
+        const ctx = sliceCanvas.getContext('2d');
+        ctx.fillStyle = '#ffffff'; ctx.fillRect(0,0,W,sliceH);
+        ctx.drawImage(canvas, 0, y, W, sliceH, 0, 0, W, sliceH);
+        const imgData = sliceCanvas.toDataURL('image/jpeg', 0.92);
+
+        if(!pdf){
+          pdf = new jsPDF({ unit:'px', format:[W, pageHpx] });
+        } else {
+          pdf.addPage([W, pageHpx], 'p');
+        }
+        pdf.addImage(imgData, 'JPEG', 0, 0, W, sliceH);
+        y += sliceH;
+      }
+    }
+
+    const fileName = `Menu_${currentOrderId || 'card'}.pdf`;
+    const pdfBlob = pdf.output('blob');
+    const file = new File([pdfBlob], fileName, {type:'application/pdf'});
+
+    if(navigator.canShare && navigator.canShare({files:[file]})){
+      await navigator.share({ files:[file], title:'मेन्यू कार्ड', text:'श्री कल्याण कैटर्स — मेन्यू कार्ड' });
+    } else {
+      const url = URL.createObjectURL(pdfBlob);
+      const a = document.createElement('a');
+      a.href = url; a.download = fileName;
+      document.body.appendChild(a); a.click(); a.remove();
+      URL.revokeObjectURL(url);
+      alert('इस ब्राउज़र में सीधा शेयर सपोर्ट नहीं है, इसलिए PDF डाउनलोड कर दी गई है — अब इसे WhatsApp/Telegram पर मैन्युअली शेयर करें।');
+    }
+  }catch(e){
+    if(e && e.name === 'AbortError'){ /* user cancelled the share sheet — not an error */ }
+    else { console.error(e); alert('शेयर करने में समस्या आई, कृपया दोबारा कोशिश करें।'); }
+  } finally {
+    btn.textContent = original;
+    btn.disabled = false;
+  }
 }
 
 async function renderPreview(){
@@ -987,6 +898,7 @@ async function renderPreview(){
   wrap.innerHTML = pagesHtml + `
     <div class="toolbar">
       <button class="btn-primary" onclick="window.print()">🖨 Print / Save as PDF</button>
+      <button class="btn-primary" id="shareMenuBtn" onclick="shareMenu()">📤 मेन्यू शेयर करें</button>
     </div>`;
   wrap.scrollIntoView({behavior:'smooth'});
 
@@ -998,7 +910,6 @@ async function renderPreview(){
 // init
 (async function init(){
   await loadCustomCatalog();
-  await initFolderMode();
   await loadDraftList();
   await startNewOrder();
 })();
