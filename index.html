@@ -73,8 +73,6 @@
   .chips{display:flex;flex-wrap:wrap;gap:6px;margin-top:8px;}
   .chip{background:var(--gold-light);color:var(--maroon-deep);padding:4px 10px;border-radius:14px;font-size:.8rem;display:flex;gap:6px;align-items:center;}
   .chip button{border:none;background:none;color:var(--maroon-deep);cursor:pointer;font-weight:700;padding:0;line-height:1;}
-  .add-custom{display:flex;gap:8px;margin-top:8px;}
-  .add-custom input{flex:1;}
   button{
     font-family:inherit;cursor:pointer;border:none;border-radius:6px;padding:8px 14px;font-size:.85rem;font-weight:600;
   }
@@ -183,6 +181,7 @@
   <div class="top-bar" style="margin-top:-6px;">
     <p class="note" id="storageStatus" style="margin:0;">कनेक्ट हो रहा है…</p>
     <div style="display:flex;gap:10px;flex-wrap:wrap;">
+      <button class="btn-ghost" onclick="refreshCatalog()">🔄 Refresh Dish List</button>
       <button class="btn-ghost" onclick="exportBackup()">⬇ Backup All Clients</button>
       <button class="btn-ghost" onclick="document.getElementById('importFile').click()">⬆ Restore Backup</button>
       <input type="file" id="importFile" accept=".json" style="display:none;" onchange="importBackup(this.files[0])">
@@ -211,7 +210,7 @@
 </div>
 
 <script>
-const BASE_CATALOG = {
+const DEFAULT_CATALOG = {
   "फ्लोटिंग / पेय / सूप": ["फ्रेश औरेन्ज ज्यूस","पानी नारियल","शाही गुलाब शेक","चॉको ओरियो शेक","वर्जिन मोजितो","ग्रीन हल्क","पिंक लेडी","काला खट्टा संगाती","किन्नू ज्यूस","वाटर मेलन ज्यूस","पाइनेप्पल किवी ज्यूस","केसर खजूर शेक","ब्राउनी वालनट शेक","केसर बादाम शेक","टमेटो सूप","राजस्थानी सूप","मनचाऊ सूप","हॉट एण्ड सोर सूप","टमाटर शोरबा","कॉफी","चाय","पानी 200 ML"],
   "स्नैक्स / स्टार्टर": ["चना जोर गरम","रोस्टेड मूंगफली","पनीर 65","पनीर 110","स्प्रिंग रोल","पी.पी. समोसा","केसर स्टिक","क्रिस्पी पनीर","जापानी पेटीज","मटर पोटली","चीज बॉल","स्टिक बर्फी","हरा भरा कबाब","चीज सिगार","दही कबाब","रेलीनोज","पाइनेप्पल संदेश"],
   "लाइव स्टॉल": ["पानी पताशी","मटर टिकिया","पनीर चिला","सिगड़ी डोसा","दही का राजभोग","वेज चाउमीन","केसर पिस्ता आइसक्रीम","पास्ता रेड एण्ड व्हाईट","थिन क्रस्ट पिज्जा","गार्लिक ब्रेड","मोमोज स्टेशन","बार-बी-क्यू (पनीर, कटहल, सेब, गोभी, अमरूद)","मुरादाबादी दाल विथ पापड़ी","फ्रेश फ्रूट काउन्टर","पनीर जलेबी","केसर मलाई दूध","टनटन कुल्फी","लखनवी थाल"],
@@ -233,7 +232,7 @@ const BASE_CATALOG = {
 const MEAL_NAMES = ["ब्रेकफास्ट","लंच","हल्दी","डिनर","भात नाश्ता","भात के समय","संगीत","फुल डे काउंटर","अन्य"];
 const HINDI_MONTHS = ["जनवरी","फरवरी","मार्च","अप्रैल","मई","जून","जुलाई","अगस्त","सितम्बर","अक्टूबर","नवम्बर","दिसम्बर"];
 
-let CATALOG = JSON.parse(JSON.stringify(BASE_CATALOG));
+let CATALOG = JSON.parse(JSON.stringify(DEFAULT_CATALOG));
 let dayCounter=0, secCounter=0;
 
 // ---------- Firebase (shared cloud storage — every device shows the same orders) ----------
@@ -261,32 +260,31 @@ function setStorageStatus(text){
   if(el) el.textContent = text;
 }
 
-// ---------- Custom catalog (shared across every device via Firestore) ----------
-async function loadCustomCatalog(){
+// ---------- Dish catalog (managed centrally via the admin page — this app only reads it) ----------
+async function loadCatalog(){
   try{
     await authReady;
-    const doc = await db.collection('meta').doc('customCatalog').get();
-    if(doc.exists){
-      const custom = doc.data() || {};
-      Object.keys(custom).forEach(cat=>{
-        if(!CATALOG[cat]) CATALOG[cat] = [];
-        (custom[cat]||[]).forEach(it=>{ if(!CATALOG[cat].includes(it)) CATALOG[cat].push(it); });
-      });
-    }
+    const doc = await db.collection('meta').doc('catalog').get();
+    CATALOG = (doc.exists && doc.data() && Object.keys(doc.data()).length)
+      ? doc.data()
+      : JSON.parse(JSON.stringify(DEFAULT_CATALOG));
     setStorageStatus('☁ ऑर्डर क्लाउड में सेव हो रहे हैं — फोन, टैबलेट और कंप्यूटर पर एक जैसे दिखेंगे।');
   }catch(e){
     console.error('Could not load catalog from cloud', e);
+    CATALOG = JSON.parse(JSON.stringify(DEFAULT_CATALOG));
     setStorageStatus('⚠ क्लाउड से कनेक्ट नहीं हो पाया — कृपया इंटरनेट कनेक्शन जाँचें।');
   }
 }
-async function saveCustomItem(cat, item){
-  if(!CATALOG[cat]) CATALOG[cat]=[];
-  if(!CATALOG[cat].includes(item)) CATALOG[cat].push(item);
-  try{
-    await authReady;
-    await db.collection('meta').doc('customCatalog')
-      .set({ [cat]: firebase.firestore.FieldValue.arrayUnion(item) }, {merge:true});
-  }catch(e){ console.error('Could not save custom item to cloud', e); }
+
+// Lets staff pull the latest dish list mid-shift if the admin just updated it, without reloading the page.
+async function refreshCatalog(){
+  await loadCatalog();
+  rebuildAllCatTabs();
+  document.querySelectorAll('.item-grid').forEach(grid=>{
+    const sid = grid.closest('.section-block').id;
+    const cat = grid.dataset.currentCat;
+    if(CATALOG[cat]) switchCat(sid, cat);
+  });
 }
 
 // ---------- Order storage (Firestore — one document per order, shared by all devices) ----------
@@ -433,10 +431,6 @@ function addSection(dayId){
     </div>
     <div class="cat-tabs">${catTabs}</div>
     <div class="item-grid" data-current-cat="${Object.keys(CATALOG)[0]}"></div>
-    <div class="add-custom">
-      <input type="text" class="customItemInput" autocomplete="off" placeholder="Add item not in list… (saved for future use)">
-      <button class="btn-ghost" onclick="addCustomItem('${sid}')">+ Add</button>
-    </div>
     <div class="chips"></div>
   `;
   holder.appendChild(wrap);
@@ -505,22 +499,6 @@ function resetSection(sid){
   const secEl = document.getElementById(sid);
   secEl.querySelector('.chips').innerHTML='';
   secEl.querySelectorAll('.item-grid input[type=checkbox]').forEach(cb=> cb.checked=false);
-}
-
-async function addCustomItem(sid){
-  const secEl = document.getElementById(sid);
-  const input = secEl.querySelector('.customItemInput');
-  const val = input.value.trim();
-  if(!val) return;
-  const cat = secEl.querySelector('.item-grid').dataset.currentCat;
-
-  await saveCustomItem(cat, val);
-  rebuildAllCatTabs();
-  switchCat(sid, cat); // refresh grid to include new item
-
-  const cb = [...secEl.querySelectorAll('.item-grid input[type=checkbox]')].find(c=>c.value===val);
-  if(cb){ cb.checked = true; toggleChip(sid, cb); }
-  input.value='';
 }
 
 function formatHindiDate(isoDate){
@@ -647,14 +625,9 @@ async function exportBackup(){
     const orders = await listOrders();
     const drafts = {};
     orders.forEach(st=>{ if(st.orderId) drafts[st.orderId] = st; });
-    let customCatalog = null;
-    try{
-      const catDoc = await db.collection('meta').doc('customCatalog').get();
-      customCatalog = catDoc.exists ? catDoc.data() : null;
-    }catch(e){}
     const seq = await getCurrentSeq();
 
-    const backup = { type:'menu_generator_backup', exportedAt: new Date().toISOString(), drafts, customCatalog, seq };
+    const backup = { type:'menu_generator_backup', exportedAt: new Date().toISOString(), drafts, seq };
     const blob = new Blob([JSON.stringify(backup, null, 2)], {type:'application/json'});
     const url = URL.createObjectURL(blob);
     const a = document.createElement('a');
@@ -677,12 +650,6 @@ function importBackup(file){
       const orderIds = Object.keys(backup.drafts||{});
       for(const id of orderIds){
         await writeOrder(id, backup.drafts[id]);
-      }
-      if(backup.customCatalog){
-        await authReady;
-        await db.collection('meta').doc('customCatalog').set(backup.customCatalog, {merge:true});
-        await loadCustomCatalog();
-        rebuildAllCatTabs();
       }
       if(backup.seq){ await setSeqIfHigher(backup.seq); }
       await loadDraftList();
@@ -909,7 +876,7 @@ async function renderPreview(){
 
 // init
 (async function init(){
-  await loadCustomCatalog();
+  await loadCatalog();
   await loadDraftList();
   await startNewOrder();
 })();
