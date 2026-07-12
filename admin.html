@@ -1,0 +1,354 @@
+<!DOCTYPE html>
+<html lang="hi">
+<head>
+<meta charset="UTF-8">
+<title>Catalog Admin — Shri Kalyan Caterers</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+Devanagari:wght@400;600;700;900&family=Cormorant+Garamond:ital,wght@0,600;1,600&display=swap" rel="stylesheet">
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-auth-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore-compat.js"></script>
+<style>
+  :root{
+    --maroon:#5c1a24; --maroon-deep:#3d0f16; --gold:#b8894a; --gold-light:#e9d3a3;
+    --cream:#faf6ee; --ink:#2a1e14; --line:#d8c9a8;
+  }
+  *{box-sizing:border-box;}
+  body{margin:0;font-family:'Noto Sans Devanagari','Segoe UI',sans-serif;background:var(--cream);color:var(--ink);}
+  .app{max-width:900px;margin:0 auto;padding:24px 16px 80px;}
+  h1.title{font-family:'Cormorant Garamond',serif;font-style:italic;font-weight:600;color:var(--maroon);font-size:2rem;margin:0 0 4px;}
+  .sub{color:#7a6a52;margin:0 0 20px;font-size:.9rem;}
+  .note{font-size:.8rem;color:#8a7a60;}
+  button{font-family:inherit;cursor:pointer;border:none;border-radius:6px;padding:9px 14px;font-size:.85rem;font-weight:600;}
+  .btn-primary{background:var(--maroon);color:#fff;}
+  .btn-primary:hover{background:var(--maroon-deep);}
+  .btn-ghost{background:#fff;border:1px solid var(--gold);color:var(--maroon);}
+  .btn-ghost:hover{background:var(--gold-light);}
+  .btn-danger{background:#fff;border:1px solid #a04b4b;color:#a04b4b;}
+  .btn-danger:hover{background:#fdecec;}
+  input[type=text],input[type=password]{
+    padding:9px 10px;border:1px solid var(--line);border-radius:6px;font-family:inherit;font-size:.9rem;background:#fffdf9;
+  }
+  input:focus{outline:2px solid var(--gold-light);border-color:var(--gold);}
+
+  /* ---- Login gate ---- */
+  #loginGate{position:fixed;inset:0;background:var(--cream);display:flex;align-items:center;justify-content:center;z-index:50;}
+  .login-card{background:#fff;border:1px solid var(--line);border-radius:12px;padding:34px 30px;max-width:360px;width:90%;text-align:center;box-shadow:0 4px 18px rgba(60,30,10,.12);}
+  .login-card h2{color:var(--maroon);margin:0 0 6px;font-family:'Cormorant Garamond',serif;font-style:italic;}
+  .login-card p{color:#7a6a52;font-size:.85rem;margin:0 0 18px;}
+  .login-card input{width:100%;margin-bottom:12px;}
+  .login-card button{width:100%;}
+  .login-err{color:#a04b4b;font-size:.8rem;min-height:18px;margin-top:8px;}
+
+  /* ---- Toolbar ---- */
+  .toolbar{display:flex;gap:10px;flex-wrap:wrap;align-items:center;margin:16px 0;padding:14px 16px;background:#fff;border:1px solid var(--line);border-radius:10px;}
+  .toolbar .status{flex:1;min-width:180px;font-size:.82rem;color:#6b4a30;}
+  .save-bar{position:sticky;top:0;z-index:10;background:var(--cream);padding:10px 0;}
+
+  /* ---- Add category ---- */
+  .add-cat-row{display:flex;gap:8px;margin:18px 0;}
+  .add-cat-row input{flex:1;}
+
+  /* ---- Category card ---- */
+  .cat-card{background:#fff;border:1px solid var(--line);border-radius:10px;padding:14px 16px;margin-bottom:14px;}
+  .cat-head{display:flex;gap:10px;align-items:center;margin-bottom:10px;}
+  .cat-head input{flex:1;font-weight:700;color:var(--maroon-deep);font-size:1rem;border:1px solid transparent;background:transparent;padding:6px 8px;border-radius:6px;}
+  .cat-head input:hover, .cat-head input:focus{border-color:var(--line);background:#fffdf9;}
+  .dish-count{font-size:.75rem;color:#8a7a60;white-space:nowrap;}
+
+  .dish-list{display:flex;flex-wrap:wrap;gap:8px;margin-bottom:10px;}
+  .dish-chip{
+    display:flex;align-items:center;gap:6px;background:var(--gold-light);color:var(--maroon-deep);
+    padding:5px 6px 5px 12px;border-radius:16px;font-size:.85rem;
+  }
+  .dish-chip input{
+    border:none;background:transparent;font-family:inherit;font-size:.85rem;color:var(--maroon-deep);
+    width:auto;min-width:40px;padding:2px 2px;
+  }
+  .dish-chip input:focus{outline:none;border-bottom:1px solid var(--maroon);}
+  .dish-chip button{background:none;border:none;color:var(--maroon-deep);font-weight:700;cursor:pointer;padding:0 4px;font-size:.9rem;line-height:1;}
+
+  .add-dish-row{display:flex;gap:8px;}
+  .add-dish-row input{flex:1;}
+
+  .empty-hint{color:#8a7a60;font-size:.85rem;padding:20px 0;text-align:center;}
+</style>
+</head>
+<body>
+
+<div id="loginGate">
+  <div class="login-card">
+    <h2>Catalog Admin</h2>
+    <p>यह पेज केवल स्टाफ प्रबंधन के लिए है। कृपया एडमिन पासवर्ड डालें।</p>
+    <input type="password" id="pwInput" placeholder="पासवर्ड" onkeydown="if(event.key==='Enter') tryLogin();">
+    <button class="btn-primary" onclick="tryLogin()">Enter</button>
+    <div class="login-err" id="loginErr"></div>
+  </div>
+</div>
+
+<div class="app" id="mainApp" style="display:none;">
+  <h1 class="title">मेन्यू कैटेलॉग एडमिन</h1>
+  <p class="sub">यहाँ जो भी कैटेगरी और डिश जोड़ेंगे/हटाएँगे, वही मुख्य ऐप में स्टाफ को दिखेंगी।</p>
+
+  <div class="toolbar">
+    <span class="status" id="status">लोड हो रहा है…</span>
+    <button class="btn-ghost" onclick="reloadFromCloud()">🔄 Reload from Cloud</button>
+    <button class="btn-ghost" onclick="importDefaults()">🧩 Import Default Catalog</button>
+  </div>
+
+  <div class="save-bar">
+    <button class="btn-primary" onclick="saveToCloud()" style="width:100%;font-size:1rem;padding:12px;">💾 सभी बदलाव क्लाउड में सेव करें (Save All Changes)</button>
+  </div>
+
+  <div class="add-cat-row">
+    <input type="text" id="newCatInput" placeholder="नई कैटेगरी का नाम (जैसे: सूप, डेज़र्ट...)" onkeydown="if(event.key==='Enter') addCategory();">
+    <button class="btn-primary" onclick="addCategory()">+ नई कैटेगरी जोड़ें</button>
+  </div>
+
+  <div id="categoriesWrap"></div>
+</div>
+
+<script>
+// ---------- Simple access gate ----------
+// This is a soft deterrent only, NOT real security — the password lives in this
+// public file's source code. Anyone determined could read it. Change ADMIN_PASSWORD
+// below to something only your staff know, and don't rely on this alone for
+// anything sensitive. For real access control, upgrade to named staff logins later.
+const ADMIN_PASSWORD = "kalyan2026";
+
+function tryLogin(){
+  const val = document.getElementById('pwInput').value;
+  if(val === ADMIN_PASSWORD){
+    document.getElementById('loginGate').style.display = 'none';
+    document.getElementById('mainApp').style.display = 'block';
+    init();
+  } else {
+    document.getElementById('loginErr').textContent = 'गलत पासवर्ड, दोबारा कोशिश करें।';
+  }
+}
+
+// ---------- Firebase (same project as the main app) ----------
+const firebaseConfig = {
+  apiKey: "AIzaSyDX8w1cyIGJ7-JfZYI6KRl02a8yVOAUnes",
+  authDomain: "shri-kalyan-caterers.firebaseapp.com",
+  projectId: "shri-kalyan-caterers",
+  storageBucket: "shri-kalyan-caterers.firebasestorage.app",
+  messagingSenderId: "1054069412159",
+  appId: "1:1054069412159:web:d2d371ab4225a79f77838a",
+  measurementId: "G-HQVE800QDN"
+};
+firebase.initializeApp(firebaseConfig);
+const db = firebase.firestore();
+
+let authReadyResolve;
+const authReady = new Promise(res => { authReadyResolve = res; });
+firebase.auth().onAuthStateChanged(user=>{
+  if(user){ authReadyResolve(); }
+  else { firebase.auth().signInAnonymously().catch(e=>console.error('Sign-in failed', e)); }
+});
+
+function setStatus(text){ document.getElementById('status').textContent = text; }
+
+// ---------- Default catalog (used only for first-time bootstrap / reset reference) ----------
+const DEFAULT_CATALOG = {
+  "फ्लोटिंग / पेय / सूप": ["फ्रेश औरेन्ज ज्यूस","पानी नारियल","शाही गुलाब शेक","चॉको ओरियो शेक","वर्जिन मोजितो","ग्रीन हल्क","पिंक लेडी","काला खट्टा संगाती","किन्नू ज्यूस","वाटर मेलन ज्यूस","पाइनेप्पल किवी ज्यूस","केसर खजूर शेक","ब्राउनी वालनट शेक","केसर बादाम शेक","टमेटो सूप","राजस्थानी सूप","मनचाऊ सूप","हॉट एण्ड सोर सूप","टमाटर शोरबा","कॉफी","चाय","पानी 200 ML"],
+  "स्नैक्स / स्टार्टर": ["चना जोर गरम","रोस्टेड मूंगफली","पनीर 65","पनीर 110","स्प्रिंग रोल","पी.पी. समोसा","केसर स्टिक","क्रिस्पी पनीर","जापानी पेटीज","मटर पोटली","चीज बॉल","स्टिक बर्फी","हरा भरा कबाब","चीज सिगार","दही कबाब","रेलीनोज","पाइनेप्पल संदेश"],
+  "लाइव स्टॉल": ["पानी पताशी","मटर टिकिया","पनीर चिला","सिगड़ी डोसा","दही का राजभोग","वेज चाउमीन","केसर पिस्ता आइसक्रीम","पास्ता रेड एण्ड व्हाईट","थिन क्रस्ट पिज्जा","गार्लिक ब्रेड","मोमोज स्टेशन","बार-बी-क्यू (पनीर, कटहल, सेब, गोभी, अमरूद)","मुरादाबादी दाल विथ पापड़ी","फ्रेश फ्रूट काउन्टर","पनीर जलेबी","केसर मलाई दूध","टनटन कुल्फी","लखनवी थाल"],
+  "सब्जियाँ": ["छोला भटूरा","पत्ता गोभी मटर","कढ़ी पकौड़ा","राजमा मसाला","कढ़ाई पनीर","आलू गोभी साग","क्रीम बटर दाल मखनी","मटर पनीर","बीकानेरी गट्टा मिर्ची","भिण्डी मसाला","पनीर बटर मसाला","मिक्स वेज","अकबरी कोफ्ता (पालक ग्रेवी)","तवा वेज लाइव","पनीर टडाटड लाइव","गार्डन सरप्राइज","मटर मशरूम","हरा चना काला अंगूर","स्पेनिश चीज कॉर्न पालक","चाणक्य स्पेशल व्हाईट ग्रेवी","ग्रीन वैली लाइव","शाही पनीर"],
+  "दाल": ["दाल फ्राई (सादा लसन प्याज)","मुरादाबादी दाल","दाल पंचमेला","दाल तड़का"],
+  "राईस": ["लेमन राईस","जीरा राईस","केसरिया चावल","नमकीन चावल","मटर पुलाव","स्टीम राईस","हैदराबादी बिरयानी"],
+  "रोटियाँ": ["तवा चपाती","मिस्सी रोटी","तंदूरी रोटी","बटर नॉन","स्टफ्ड नॉन","रेशमी लच्छा पराठा","जंगली रोटी"],
+  "दही / रायता": ["बूंदी रायता","वेजिटेबल रायता","शेखावटी दही बड़ा","जयपुरी दही बड़ा","दही गुंजी","बथुआ रायता","पाइनेप्पल रायता","दही कटोरी"],
+  "चटनी": ["ग्रीन चटनी","नारियल चटनी","धनिया चटनी","लसन चटनी","नवरतन चटनी"],
+  "पापड़ स्टेशन": ["पोला पापड़","रोस्टेड पापड़","मसाला पापड़","डिस्को पापड़"],
+  "सलाद": ["सलाद","ग्रीन सलाद","अंकुरित सलाद","रशियन सलाद","मेक्रोनी सलाद","सिरका प्याज","ककड़ी अंगूर"],
+  "आचार": ["आचार","मिक्स आचार","आम का आचार","कैर का आचार","मीठा नींबू का आचार","अथाणिया मिर्च"],
+  "स्वीट": ["फ्रूट क्रीम","स्पंज रसगुल्ला","मूंग दाल हलवा","नटराज जामुन","बटर स्कॉच आइसक्रीम","केसर बादाम मिश्री मावा","स्पंज राजभोग","रसमलाई","काजू कतली","गुलाब जामुन","केसरिया जलेबी","काजू अंजीर हलवा","काजू गुलकंद सैंडविच","अनुरोध (मिट्टी कटोरी)","मूंग बादाम हलवा","अखरोट हलवा","बेक्ड मालपुआ","गुलकंद गुलाब जामुन","अनारकली","चाइनीज रसगुल्ला","अमृत भोग","सीजलिंग ब्राउनी विथ आइसक्रीम","चॉकलेट पेस्ट्री","पाइनेप्पल पेस्ट्री"],
+  "नमकीन महफ़िल": ["नमकीन","मिक्स नमकीन","रतलामी सेव","टनटन","टेस्टी","जयपुरी हींग कचोरी","मल्का मसूर","ड्राई फ्रूट लच्छा","नवरतन रिमझिम (काजू वाली)"],
+  "राजस्थानी स्पेशल": ["बाजरा रोटी","अजवाइन रोटी","आलू प्याज सब्जी","खेजड़ा सब्जी","फोफलिया सब्जी","सरवोड़ी सब्जी","कैरी लूंजी","हींग कढ़ी","कैर सांगरी","बीकानेरी बड़ी गुंदली","दाख दाना मेथी","ग्वारफली कचरी","गुड़ का गलवानिया","बाजरा खिचड़ी","गुड़ घी मक्खन बूरा","नखराली चटनी","कुंडा दही","बिलौना छाछ"],
+  "रामबाबू पराठा": ["मेथी पराठा","पनीर पराठा","करेला पराठा","मिक्स पराठा"],
+  "ब्रेकफास्ट": ["गरम जलेबी","केसरिया दूध (कुल्हड़ में)","आलू कोफ्ता","पोहा","खमण ढोकला","वेज सेण्डविच","इडली सांभर","ब्रेड बटर जैम","फ्रूट्स 3 प्रकार","कॉर्नफ्लैक्स","रबड़ी इमरती","छैना टोस्ट","वेज उत्तपम","मसाला डोसा","कोईन इडली फ्राई","कढ़ी कचोरी","मखनिया लस्सी","वेजिटेबल पकौड़ी","मिर्ची बड़ा","ब्रेड पकौड़ा","पनीर पकौड़ा"]
+};
+
+// ---------- Working state (in-memory until "Save All Changes" is pressed) ----------
+let catalog = {};
+
+async function loadFromCloud(){
+  await authReady;
+  const doc = await db.collection('meta').doc('catalog').get();
+  catalog = (doc.exists && doc.data() && Object.keys(doc.data()).length) ? doc.data() : {};
+}
+
+async function reloadFromCloud(){
+  if(!confirm('क्लाउड से दोबारा लोड करें? अभी तक सेव न किए गए बदलाव खो जाएँगे।')) return;
+  setStatus('लोड हो रहा है…');
+  await loadFromCloud();
+  render();
+  setStatus('☁ क्लाउड से लोड हो गया।');
+}
+
+function importDefaults(){
+  if(Object.keys(catalog).length && !confirm('यह मौजूदा (अभी तक सेव न हुई) सूची को डिफ़ॉल्ट कैटलॉग से बदल देगा। जारी रखें?')) return;
+  catalog = JSON.parse(JSON.stringify(DEFAULT_CATALOG));
+  render();
+  setStatus('डिफ़ॉल्ट कैटलॉग लोड हो गया — अभी क्लाउड में सेव नहीं हुआ, नीचे "Save All Changes" दबाना न भूलें।');
+}
+
+async function saveToCloud(){
+  try{
+    await authReady;
+    await db.collection('meta').doc('catalog').set(catalog);
+    setStatus('☁ सेव हो गया — मुख्य ऐप में स्टाफ को अब यही सूची दिखेगी।');
+  }catch(e){
+    console.error(e);
+    setStatus('⚠ सेव नहीं हो पाया — इंटरनेट जाँचें और दोबारा कोशिश करें।');
+  }
+}
+
+function addCategory(){
+  const input = document.getElementById('newCatInput');
+  const name = input.value.trim();
+  if(!name) return;
+  if(catalog[name]){ alert('यह कैटेगरी पहले से मौजूद है।'); return; }
+  catalog[name] = [];
+  input.value = '';
+  render();
+}
+
+function renameCategory(oldName, newName){
+  newName = newName.trim();
+  if(!newName || newName === oldName) { render(); return; }
+  if(catalog[newName]){ alert('इस नाम की कैटेगरी पहले से मौजूद है।'); render(); return; }
+  const reordered = {};
+  Object.keys(catalog).forEach(k=>{
+    if(k === oldName) reordered[newName] = catalog[k];
+    else reordered[k] = catalog[k];
+  });
+  catalog = reordered;
+  render();
+}
+
+function deleteCategory(name){
+  if(!confirm(`"${name}" पूरी कैटेगरी और उसकी सभी डिश हटाएँ?`)) return;
+  delete catalog[name];
+  render();
+}
+
+function addDish(cat){
+  const input = document.getElementById('newDish__' + catKey(cat));
+  const val = input.value.trim();
+  if(!val) return;
+  if(catalog[cat].includes(val)){ alert('यह डिश पहले से इस कैटेगरी में है।'); return; }
+  catalog[cat].push(val);
+  input.value = '';
+  render();
+}
+
+function renameDish(cat, index, newVal){
+  newVal = newVal.trim();
+  if(!newVal){ catalog[cat].splice(index,1); render(); return; }
+  catalog[cat][index] = newVal;
+}
+
+function deleteDish(cat, index){
+  catalog[cat].splice(index,1);
+  render();
+}
+
+function catKey(cat){
+  // safe-ish DOM id from a Hindi category name (doesn't need to be reversible, just unique+stable per render)
+  return btoa(unescape(encodeURIComponent(cat))).replace(/[^a-zA-Z0-9]/g,'');
+}
+
+function render(){
+  const wrap = document.getElementById('categoriesWrap');
+  wrap.innerHTML = '';
+
+  const catNames = Object.keys(catalog);
+  if(!catNames.length){
+    wrap.innerHTML = '<div class="empty-hint">अभी कोई कैटेगरी नहीं है। ऊपर "Import Default Catalog" दबाकर शुरू करें, या नई कैटेगरी जोड़ें।</div>';
+    return;
+  }
+
+  catNames.forEach(cat=>{
+    const card = document.createElement('div');
+    card.className = 'cat-card';
+
+    // Header: editable name + delete
+    const head = document.createElement('div');
+    head.className = 'cat-head';
+
+    const nameInput = document.createElement('input');
+    nameInput.type = 'text';
+    nameInput.value = cat;
+    nameInput.addEventListener('change', ()=> renameCategory(cat, nameInput.value));
+    head.appendChild(nameInput);
+
+    const count = document.createElement('span');
+    count.className = 'dish-count';
+    count.textContent = `${catalog[cat].length} डिश`;
+    head.appendChild(count);
+
+    const delCatBtn = document.createElement('button');
+    delCatBtn.className = 'btn-danger';
+    delCatBtn.textContent = '🗑 Delete Category';
+    delCatBtn.addEventListener('click', ()=> deleteCategory(cat));
+    head.appendChild(delCatBtn);
+
+    card.appendChild(head);
+
+    // Dish chips
+    const dishList = document.createElement('div');
+    dishList.className = 'dish-list';
+    catalog[cat].forEach((dish, idx)=>{
+      const chip = document.createElement('span');
+      chip.className = 'dish-chip';
+
+      const dishInput = document.createElement('input');
+      dishInput.type = 'text';
+      dishInput.value = dish;
+      dishInput.size = Math.max(4, dish.length);
+      dishInput.addEventListener('input', ()=>{ dishInput.size = Math.max(4, dishInput.value.length); });
+      dishInput.addEventListener('change', ()=> renameDish(cat, idx, dishInput.value));
+      chip.appendChild(dishInput);
+
+      const delBtn = document.createElement('button');
+      delBtn.textContent = '×';
+      delBtn.addEventListener('click', ()=> deleteDish(cat, idx));
+      chip.appendChild(delBtn);
+
+      dishList.appendChild(chip);
+    });
+    card.appendChild(dishList);
+
+    // Add dish row
+    const addRow = document.createElement('div');
+    addRow.className = 'add-dish-row';
+    const addInput = document.createElement('input');
+    addInput.type = 'text';
+    addInput.id = 'newDish__' + catKey(cat);
+    addInput.placeholder = 'नई डिश का नाम…';
+    addInput.addEventListener('keydown', (e)=>{ if(e.key==='Enter') addDish(cat); });
+    const addBtn = document.createElement('button');
+    addBtn.className = 'btn-ghost';
+    addBtn.textContent = '+ Add';
+    addBtn.addEventListener('click', ()=> addDish(cat));
+    addRow.appendChild(addInput);
+    addRow.appendChild(addBtn);
+    card.appendChild(addRow);
+
+    wrap.appendChild(card);
+  });
+}
+
+async function init(){
+  setStatus('लोड हो रहा है…');
+  await loadFromCloud();
+  render();
+  setStatus(Object.keys(catalog).length
+    ? '☁ क्लाउड से लोड हो गया।'
+    : 'अभी कोई कैटलॉग सेव नहीं है — "Import Default Catalog" से शुरू करें।');
+}
+</script>
+</body>
+</html>
