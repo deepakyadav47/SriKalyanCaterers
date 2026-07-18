@@ -15,7 +15,7 @@
   }
   *{box-sizing:border-box;}
   body{margin:0;font-family:'Noto Sans Devanagari','Segoe UI',sans-serif;background:var(--cream);color:var(--ink);}
-  .app{max-width:900px;margin:0 auto;padding:24px 16px 80px;}
+  .app{max-width:960px;margin:0 auto;padding:24px 16px 80px;}
   h1.title{font-family:'Cormorant Garamond',serif;font-style:italic;font-weight:600;color:var(--maroon);font-size:2rem;margin:0 0 4px;}
   .sub{color:#7a6a52;margin:0 0 20px;font-size:.9rem;}
   .note{font-size:.8rem;color:#8a7a60;}
@@ -26,10 +26,11 @@
   .btn-ghost:hover{background:var(--gold-light);}
   .btn-danger{background:#fff;border:1px solid #a04b4b;color:#a04b4b;}
   .btn-danger:hover{background:#fdecec;}
-  input[type=text],input[type=password]{
+  .btn-sm{padding:5px 10px;font-size:.75rem;}
+  input[type=text],input[type=password],select{
     padding:9px 10px;border:1px solid var(--line);border-radius:6px;font-family:inherit;font-size:.9rem;background:#fffdf9;
   }
-  input:focus{outline:2px solid var(--gold-light);border-color:var(--gold);}
+  input:focus,select:focus{outline:2px solid var(--gold-light);border-color:var(--gold);}
 
   /* ---- Login gate ---- */
   #loginGate{position:fixed;inset:0;background:var(--cream);display:flex;align-items:center;justify-content:center;z-index:50;}
@@ -46,14 +47,16 @@
   .save-bar{position:sticky;top:0;z-index:10;background:var(--cream);padding:10px 0;}
 
   /* ---- Add category ---- */
-  .add-cat-row{display:flex;gap:8px;margin:18px 0;}
-  .add-cat-row input{flex:1;}
+  .add-cat-row{display:flex;gap:8px;margin:18px 0;flex-wrap:wrap;}
+  .add-cat-row input{flex:1;min-width:180px;}
 
-  /* ---- Category card ---- */
+  /* ---- Major category card ---- */
   .cat-card{background:#fff;border:1px solid var(--line);border-radius:10px;padding:14px 16px;margin-bottom:14px;}
-  .cat-head{display:flex;gap:10px;align-items:center;margin-bottom:10px;}
-  .cat-head input{flex:1;font-weight:700;color:var(--maroon-deep);font-size:1rem;border:1px solid transparent;background:transparent;padding:6px 8px;border-radius:6px;}
-  .cat-head input:hover, .cat-head input:focus{border-color:var(--line);background:#fffdf9;}
+  .cat-card.is-group{border-left:4px solid var(--gold);}
+  .cat-head{display:flex;gap:10px;align-items:center;margin-bottom:10px;flex-wrap:wrap;}
+  .cat-head input.cat-name{flex:1;min-width:160px;font-weight:700;color:var(--maroon-deep);font-size:1.05rem;border:1px solid transparent;background:transparent;padding:6px 8px;border-radius:6px;}
+  .cat-head input.cat-name:hover, .cat-head input.cat-name:focus{border-color:var(--line);background:#fffdf9;}
+  .type-badge{font-size:.68rem;padding:2px 8px;border-radius:10px;background:var(--gold-light);color:var(--maroon-deep);font-weight:700;white-space:nowrap;}
   .dish-count{font-size:.75rem;color:#8a7a60;white-space:nowrap;}
 
   .dish-list{display:flex;flex-wrap:wrap;gap:8px;margin-bottom:10px;}
@@ -70,6 +73,14 @@
 
   .add-dish-row{display:flex;gap:8px;}
   .add-dish-row input{flex:1;}
+
+  /* ---- Sub-category nested block ---- */
+  .sub-block{background:#fffdf7;border:1px solid var(--gold-light);border-radius:8px;padding:12px 14px;margin:0 0 10px 14px;}
+  .sub-head{display:flex;gap:10px;align-items:center;margin-bottom:8px;flex-wrap:wrap;}
+  .sub-head input.sub-name{flex:1;min-width:140px;font-weight:700;color:#8a5a2b;font-size:.92rem;border:1px solid transparent;background:transparent;padding:4px 6px;border-radius:6px;}
+  .sub-head input.sub-name:hover, .sub-head input.sub-name:focus{border-color:var(--gold-light);background:#fff;}
+  .add-sub-row{display:flex;gap:8px;margin-top:6px;}
+  .add-sub-row input{flex:1;}
 
   .empty-hint{color:#8a7a60;font-size:.85rem;padding:20px 0;text-align:center;}
 </style>
@@ -88,12 +99,13 @@
 
 <div class="app" id="mainApp" style="display:none;">
   <h1 class="title">मेन्यू कैटेलॉग एडमिन</h1>
-  <p class="sub">यहाँ जो भी कैटेगरी और डिश जोड़ेंगे/हटाएँगे, वही मुख्य ऐप में स्टाफ को दिखेंगी।</p>
+  <p class="sub">यहाँ जो भी कैटेगरी, उप-श्रेणी और डिश जोड़ेंगे/हटाएँगे, वही मुख्य ऐप में स्टाफ को दिखेंगी।</p>
 
   <div class="toolbar">
     <span class="status" id="status">लोड हो रहा है…</span>
     <button class="btn-ghost" onclick="reloadFromCloud()">🔄 Reload from Cloud</button>
-    <button class="btn-ghost" onclick="importDefaults()">🧩 Import Default Catalog</button>
+    <button class="btn-ghost" onclick="document.getElementById('importCatalogFile').click()">⬆ Import Catalog from File</button>
+    <input type="file" id="importCatalogFile" accept=".json" style="display:none;" onchange="importCatalogFile(this.files[0])">
   </div>
 
   <div class="save-bar">
@@ -101,7 +113,11 @@
   </div>
 
   <div class="add-cat-row">
-    <input type="text" id="newCatInput" placeholder="नई कैटेगरी का नाम (जैसे: सूप, डेज़र्ट...)" onkeydown="if(event.key==='Enter') addCategory();">
+    <input type="text" id="newCatInput" placeholder="नई कैटेगरी का नाम…" onkeydown="if(event.key==='Enter') addCategory();">
+    <select id="newCatType">
+      <option value="flat">सीधी कैटेगरी (बिना उप-श्रेणी)</option>
+      <option value="group">उप-श्रेणियों सहित (जैसे: मिठाई → बर्फी, हलवा...)</option>
+    </select>
     <button class="btn-primary" onclick="addCategory()">+ नई कैटेगरी जोड़ें</button>
   </div>
 
@@ -111,9 +127,8 @@
 <script>
 // ---------- Simple access gate ----------
 // This is a soft deterrent only, NOT real security — the password lives in this
-// public file's source code. Anyone determined could read it. Change ADMIN_PASSWORD
-// below to something only your staff know, and don't rely on this alone for
-// anything sensitive. For real access control, upgrade to named staff logins later.
+// public file's source code. Change ADMIN_PASSWORD below to something only your
+// staff know. For real access control, upgrade to named staff logins later.
 const ADMIN_PASSWORD = "kalyan2026";
 
 function tryLogin(){
@@ -148,27 +163,7 @@ firebase.auth().onAuthStateChanged(user=>{
 });
 
 function setStatus(text){ document.getElementById('status').textContent = text; }
-
-// ---------- Default catalog (used only for first-time bootstrap / reset reference) ----------
-const DEFAULT_CATALOG = {
-  "फ्लोटिंग / पेय / सूप": ["फ्रेश औरेन्ज ज्यूस","पानी नारियल","शाही गुलाब शेक","चॉको ओरियो शेक","वर्जिन मोजितो","ग्रीन हल्क","पिंक लेडी","काला खट्टा संगाती","किन्नू ज्यूस","वाटर मेलन ज्यूस","पाइनेप्पल किवी ज्यूस","केसर खजूर शेक","ब्राउनी वालनट शेक","केसर बादाम शेक","टमेटो सूप","राजस्थानी सूप","मनचाऊ सूप","हॉट एण्ड सोर सूप","टमाटर शोरबा","कॉफी","चाय","पानी 200 ML"],
-  "स्नैक्स / स्टार्टर": ["चना जोर गरम","रोस्टेड मूंगफली","पनीर 65","पनीर 110","स्प्रिंग रोल","पी.पी. समोसा","केसर स्टिक","क्रिस्पी पनीर","जापानी पेटीज","मटर पोटली","चीज बॉल","स्टिक बर्फी","हरा भरा कबाब","चीज सिगार","दही कबाब","रेलीनोज","पाइनेप्पल संदेश"],
-  "लाइव स्टॉल": ["पानी पताशी","मटर टिकिया","पनीर चिला","सिगड़ी डोसा","दही का राजभोग","वेज चाउमीन","केसर पिस्ता आइसक्रीम","पास्ता रेड एण्ड व्हाईट","थिन क्रस्ट पिज्जा","गार्लिक ब्रेड","मोमोज स्टेशन","बार-बी-क्यू (पनीर, कटहल, सेब, गोभी, अमरूद)","मुरादाबादी दाल विथ पापड़ी","फ्रेश फ्रूट काउन्टर","पनीर जलेबी","केसर मलाई दूध","टनटन कुल्फी","लखनवी थाल"],
-  "सब्जियाँ": ["छोला भटूरा","पत्ता गोभी मटर","कढ़ी पकौड़ा","राजमा मसाला","कढ़ाई पनीर","आलू गोभी साग","क्रीम बटर दाल मखनी","मटर पनीर","बीकानेरी गट्टा मिर्ची","भिण्डी मसाला","पनीर बटर मसाला","मिक्स वेज","अकबरी कोफ्ता (पालक ग्रेवी)","तवा वेज लाइव","पनीर टडाटड लाइव","गार्डन सरप्राइज","मटर मशरूम","हरा चना काला अंगूर","स्पेनिश चीज कॉर्न पालक","चाणक्य स्पेशल व्हाईट ग्रेवी","ग्रीन वैली लाइव","शाही पनीर"],
-  "दाल": ["दाल फ्राई (सादा लसन प्याज)","मुरादाबादी दाल","दाल पंचमेला","दाल तड़का"],
-  "राईस": ["लेमन राईस","जीरा राईस","केसरिया चावल","नमकीन चावल","मटर पुलाव","स्टीम राईस","हैदराबादी बिरयानी"],
-  "रोटियाँ": ["तवा चपाती","मिस्सी रोटी","तंदूरी रोटी","बटर नॉन","स्टफ्ड नॉन","रेशमी लच्छा पराठा","जंगली रोटी"],
-  "दही / रायता": ["बूंदी रायता","वेजिटेबल रायता","शेखावटी दही बड़ा","जयपुरी दही बड़ा","दही गुंजी","बथुआ रायता","पाइनेप्पल रायता","दही कटोरी"],
-  "चटनी": ["ग्रीन चटनी","नारियल चटनी","धनिया चटनी","लसन चटनी","नवरतन चटनी"],
-  "पापड़ स्टेशन": ["पोला पापड़","रोस्टेड पापड़","मसाला पापड़","डिस्को पापड़"],
-  "सलाद": ["सलाद","ग्रीन सलाद","अंकुरित सलाद","रशियन सलाद","मेक्रोनी सलाद","सिरका प्याज","ककड़ी अंगूर"],
-  "आचार": ["आचार","मिक्स आचार","आम का आचार","कैर का आचार","मीठा नींबू का आचार","अथाणिया मिर्च"],
-  "स्वीट": ["फ्रूट क्रीम","स्पंज रसगुल्ला","मूंग दाल हलवा","नटराज जामुन","बटर स्कॉच आइसक्रीम","केसर बादाम मिश्री मावा","स्पंज राजभोग","रसमलाई","काजू कतली","गुलाब जामुन","केसरिया जलेबी","काजू अंजीर हलवा","काजू गुलकंद सैंडविच","अनुरोध (मिट्टी कटोरी)","मूंग बादाम हलवा","अखरोट हलवा","बेक्ड मालपुआ","गुलकंद गुलाब जामुन","अनारकली","चाइनीज रसगुल्ला","अमृत भोग","सीजलिंग ब्राउनी विथ आइसक्रीम","चॉकलेट पेस्ट्री","पाइनेप्पल पेस्ट्री"],
-  "नमकीन महफ़िल": ["नमकीन","मिक्स नमकीन","रतलामी सेव","टनटन","टेस्टी","जयपुरी हींग कचोरी","मल्का मसूर","ड्राई फ्रूट लच्छा","नवरतन रिमझिम (काजू वाली)"],
-  "राजस्थानी स्पेशल": ["बाजरा रोटी","अजवाइन रोटी","आलू प्याज सब्जी","खेजड़ा सब्जी","फोफलिया सब्जी","सरवोड़ी सब्जी","कैरी लूंजी","हींग कढ़ी","कैर सांगरी","बीकानेरी बड़ी गुंदली","दाख दाना मेथी","ग्वारफली कचरी","गुड़ का गलवानिया","बाजरा खिचड़ी","गुड़ घी मक्खन बूरा","नखराली चटनी","कुंडा दही","बिलौना छाछ"],
-  "रामबाबू पराठा": ["मेथी पराठा","पनीर पराठा","करेला पराठा","मिक्स पराठा"],
-  "ब्रेकफास्ट": ["गरम जलेबी","केसरिया दूध (कुल्हड़ में)","आलू कोफ्ता","पोहा","खमण ढोकला","वेज सेण्डविच","इडली सांभर","ब्रेड बटर जैम","फ्रूट्स 3 प्रकार","कॉर्नफ्लैक्स","रबड़ी इमरती","छैना टोस्ट","वेज उत्तपम","मसाला डोसा","कोईन इडली फ्राई","कढ़ी कचोरी","मखनिया लस्सी","वेजिटेबल पकौड़ी","मिर्ची बड़ा","ब्रेड पकौड़ा","पनीर पकौड़ा"]
-};
+function isGroup(entry){ return entry && !Array.isArray(entry) && entry.__group__; }
 
 // ---------- Working state (in-memory until "Save All Changes" is pressed) ----------
 let catalog = {};
@@ -187,11 +182,21 @@ async function reloadFromCloud(){
   setStatus('☁ क्लाउड से लोड हो गया।');
 }
 
-function importDefaults(){
-  if(Object.keys(catalog).length && !confirm('यह मौजूदा (अभी तक सेव न हुई) सूची को डिफ़ॉल्ट कैटलॉग से बदल देगा। जारी रखें?')) return;
-  catalog = JSON.parse(JSON.stringify(DEFAULT_CATALOG));
-  render();
-  setStatus('डिफ़ॉल्ट कैटलॉग लोड हो गया — अभी क्लाउड में सेव नहीं हुआ, नीचे "Save All Changes" दबाना न भूलें।');
+function importCatalogFile(file){
+  if(!file) return;
+  if(Object.keys(catalog).length && !confirm('यह मौजूदा (अभी तक सेव न हुई) सूची को इस फाइल की सूची से बदल देगा। जारी रखें?')) return;
+  const reader = new FileReader();
+  reader.onload = (e)=>{
+    try{
+      const parsed = JSON.parse(e.target.result);
+      catalog = parsed;
+      render();
+      setStatus('फाइल से लोड हो गया — ध्यान से जाँचें, फिर ऊपर "Save All Changes" दबाएँ। अभी तक क्लाउड में सेव नहीं हुआ है।');
+    }catch(err){
+      alert('यह एक वैध कैटलॉग फाइल नहीं लगती।');
+    }
+  };
+  reader.readAsText(file);
 }
 
 async function saveToCloud(){
@@ -205,12 +210,14 @@ async function saveToCloud(){
   }
 }
 
+// ---------- Major category CRUD ----------
 function addCategory(){
   const input = document.getElementById('newCatInput');
+  const type = document.getElementById('newCatType').value;
   const name = input.value.trim();
   if(!name) return;
   if(catalog[name]){ alert('यह कैटेगरी पहले से मौजूद है।'); return; }
-  catalog[name] = [];
+  catalog[name] = (type === 'group') ? { __group__: true, subs: {} } : [];
   input.value = '';
   render();
 }
@@ -229,11 +236,12 @@ function renameCategory(oldName, newName){
 }
 
 function deleteCategory(name){
-  if(!confirm(`"${name}" पूरी कैटेगरी और उसकी सभी डिश हटाएँ?`)) return;
+  if(!confirm(`"${name}" पूरी कैटेगरी (और इसकी सभी उप-श्रेणी/डिश) हमेशा के लिए हटाएँ?`)) return;
   delete catalog[name];
   render();
 }
 
+// ---------- Flat-category dish CRUD ----------
 function addDish(cat){
   const input = document.getElementById('newDish__' + catKey(cat));
   const val = input.value.trim();
@@ -243,21 +251,91 @@ function addDish(cat){
   input.value = '';
   render();
 }
-
 function renameDish(cat, index, newVal){
   newVal = newVal.trim();
   if(!newVal){ catalog[cat].splice(index,1); render(); return; }
   catalog[cat][index] = newVal;
 }
-
 function deleteDish(cat, index){
   catalog[cat].splice(index,1);
   render();
 }
 
-function catKey(cat){
-  // safe-ish DOM id from a Hindi category name (doesn't need to be reversible, just unique+stable per render)
-  return btoa(unescape(encodeURIComponent(cat))).replace(/[^a-zA-Z0-9]/g,'');
+// ---------- Sub-category CRUD (inside a grouped major category) ----------
+function addSubcategory(major){
+  const input = document.getElementById('newSub__' + catKey(major));
+  const name = input.value.trim();
+  if(!name) return;
+  if(catalog[major].subs[name]){ alert('यह उप-श्रेणी पहले से मौजूद है।'); return; }
+  catalog[major].subs[name] = [];
+  input.value = '';
+  render();
+}
+function renameSubcategory(major, oldSub, newSub){
+  newSub = newSub.trim();
+  if(!newSub || newSub === oldSub){ render(); return; }
+  const subs = catalog[major].subs;
+  if(subs[newSub]){ alert('इस नाम की उप-श्रेणी पहले से मौजूद है।'); render(); return; }
+  const reordered = {};
+  Object.keys(subs).forEach(k=>{
+    if(k === oldSub) reordered[newSub] = subs[k];
+    else reordered[k] = subs[k];
+  });
+  catalog[major].subs = reordered;
+  render();
+}
+function deleteSubcategory(major, sub){
+  if(!confirm(`उप-श्रेणी "${sub}" (और इसकी सभी डिश) हटाएँ?`)) return;
+  delete catalog[major].subs[sub];
+  render();
+}
+function addDishInSub(major, sub){
+  const input = document.getElementById('newDish__' + catKey(major) + '__' + catKey(sub));
+  const val = input.value.trim();
+  if(!val) return;
+  if(catalog[major].subs[sub].includes(val)){ alert('यह डिश पहले से इस उप-श्रेणी में है।'); return; }
+  catalog[major].subs[sub].push(val);
+  input.value = '';
+  render();
+}
+function renameDishInSub(major, sub, index, newVal){
+  newVal = newVal.trim();
+  if(!newVal){ catalog[major].subs[sub].splice(index,1); render(); return; }
+  catalog[major].subs[sub][index] = newVal;
+}
+function deleteDishInSub(major, sub, index){
+  catalog[major].subs[sub].splice(index,1);
+  render();
+}
+
+function catKey(name){
+  // safe-ish DOM id from a Hindi name (doesn't need to be reversible, just unique+stable per render)
+  return btoa(unescape(encodeURIComponent(name))).replace(/[^a-zA-Z0-9]/g,'');
+}
+
+function buildDishList(items, onRename, onDelete){
+  const dishList = document.createElement('div');
+  dishList.className = 'dish-list';
+  items.forEach((dish, idx)=>{
+    const chip = document.createElement('span');
+    chip.className = 'dish-chip';
+
+    const dishInput = document.createElement('input');
+    dishInput.type = 'text';
+    dishInput.value = dish;
+    dishInput.size = Math.max(4, dish.length);
+    dishInput.addEventListener('input', ()=>{ dishInput.size = Math.max(4, dishInput.value.length); });
+    dishInput.addEventListener('change', ()=> onRename(idx, dishInput.value));
+    chip.appendChild(dishInput);
+
+    const delBtn = document.createElement('button');
+    delBtn.textContent = '×';
+    delBtn.addEventListener('click', ()=> onDelete(idx));
+    chip.appendChild(delBtn);
+
+    dishList.appendChild(chip);
+  });
+  return dishList;
 }
 
 function render(){
@@ -266,76 +344,138 @@ function render(){
 
   const catNames = Object.keys(catalog);
   if(!catNames.length){
-    wrap.innerHTML = '<div class="empty-hint">अभी कोई कैटेगरी नहीं है। ऊपर "Import Default Catalog" दबाकर शुरू करें, या नई कैटेगरी जोड़ें।</div>';
+    wrap.innerHTML = '<div class="empty-hint">अभी कोई कैटेगरी नहीं है। ऊपर से नई कैटेगरी जोड़ें।</div>';
     return;
   }
 
   catNames.forEach(cat=>{
-    const card = document.createElement('div');
-    card.className = 'cat-card';
+    const entry = catalog[cat];
+    const grouped = isGroup(entry);
 
-    // Header: editable name + delete
+    const card = document.createElement('div');
+    card.className = 'cat-card' + (grouped ? ' is-group' : '');
+
+    // ---- Header ----
     const head = document.createElement('div');
     head.className = 'cat-head';
 
     const nameInput = document.createElement('input');
     nameInput.type = 'text';
+    nameInput.className = 'cat-name';
     nameInput.value = cat;
     nameInput.addEventListener('change', ()=> renameCategory(cat, nameInput.value));
     head.appendChild(nameInput);
 
+    const badge = document.createElement('span');
+    badge.className = 'type-badge';
+    badge.textContent = grouped ? 'उप-श्रेणियों सहित' : 'सीधी कैटेगरी';
+    head.appendChild(badge);
+
     const count = document.createElement('span');
     count.className = 'dish-count';
-    count.textContent = `${catalog[cat].length} डिश`;
+    count.textContent = grouped
+      ? `${Object.keys(entry.subs).length} उप-श्रेणी`
+      : `${entry.length} डिश`;
     head.appendChild(count);
 
     const delCatBtn = document.createElement('button');
-    delCatBtn.className = 'btn-danger';
+    delCatBtn.className = 'btn-danger btn-sm';
     delCatBtn.textContent = '🗑 Delete Category';
     delCatBtn.addEventListener('click', ()=> deleteCategory(cat));
     head.appendChild(delCatBtn);
 
     card.appendChild(head);
 
-    // Dish chips
-    const dishList = document.createElement('div');
-    dishList.className = 'dish-list';
-    catalog[cat].forEach((dish, idx)=>{
-      const chip = document.createElement('span');
-      chip.className = 'dish-chip';
+    if(!grouped){
+      // ---- Flat category: dish chips + add-dish row ----
+      card.appendChild(buildDishList(entry,
+        (idx, val)=> renameDish(cat, idx, val),
+        (idx)=> deleteDish(cat, idx)
+      ));
 
-      const dishInput = document.createElement('input');
-      dishInput.type = 'text';
-      dishInput.value = dish;
-      dishInput.size = Math.max(4, dish.length);
-      dishInput.addEventListener('input', ()=>{ dishInput.size = Math.max(4, dishInput.value.length); });
-      dishInput.addEventListener('change', ()=> renameDish(cat, idx, dishInput.value));
-      chip.appendChild(dishInput);
+      const addRow = document.createElement('div');
+      addRow.className = 'add-dish-row';
+      const addInput = document.createElement('input');
+      addInput.type = 'text';
+      addInput.id = 'newDish__' + catKey(cat);
+      addInput.placeholder = 'नई डिश का नाम…';
+      addInput.addEventListener('keydown', (e)=>{ if(e.key==='Enter') addDish(cat); });
+      const addBtn = document.createElement('button');
+      addBtn.className = 'btn-ghost btn-sm';
+      addBtn.textContent = '+ Add';
+      addBtn.addEventListener('click', ()=> addDish(cat));
+      addRow.appendChild(addInput);
+      addRow.appendChild(addBtn);
+      card.appendChild(addRow);
 
-      const delBtn = document.createElement('button');
-      delBtn.textContent = '×';
-      delBtn.addEventListener('click', ()=> deleteDish(cat, idx));
-      chip.appendChild(delBtn);
+    } else {
+      // ---- Grouped category: one nested block per sub-category ----
+      Object.keys(entry.subs).forEach(sub=>{
+        const subBlock = document.createElement('div');
+        subBlock.className = 'sub-block';
 
-      dishList.appendChild(chip);
-    });
-    card.appendChild(dishList);
+        const subHead = document.createElement('div');
+        subHead.className = 'sub-head';
 
-    // Add dish row
-    const addRow = document.createElement('div');
-    addRow.className = 'add-dish-row';
-    const addInput = document.createElement('input');
-    addInput.type = 'text';
-    addInput.id = 'newDish__' + catKey(cat);
-    addInput.placeholder = 'नई डिश का नाम…';
-    addInput.addEventListener('keydown', (e)=>{ if(e.key==='Enter') addDish(cat); });
-    const addBtn = document.createElement('button');
-    addBtn.className = 'btn-ghost';
-    addBtn.textContent = '+ Add';
-    addBtn.addEventListener('click', ()=> addDish(cat));
-    addRow.appendChild(addInput);
-    addRow.appendChild(addBtn);
-    card.appendChild(addRow);
+        const subNameInput = document.createElement('input');
+        subNameInput.type = 'text';
+        subNameInput.className = 'sub-name';
+        subNameInput.value = sub;
+        subNameInput.addEventListener('change', ()=> renameSubcategory(cat, sub, subNameInput.value));
+        subHead.appendChild(subNameInput);
+
+        const subCount = document.createElement('span');
+        subCount.className = 'dish-count';
+        subCount.textContent = `${entry.subs[sub].length} डिश`;
+        subHead.appendChild(subCount);
+
+        const delSubBtn = document.createElement('button');
+        delSubBtn.className = 'btn-danger btn-sm';
+        delSubBtn.textContent = '🗑 उप-श्रेणी हटाएँ';
+        delSubBtn.addEventListener('click', ()=> deleteSubcategory(cat, sub));
+        subHead.appendChild(delSubBtn);
+
+        subBlock.appendChild(subHead);
+
+        subBlock.appendChild(buildDishList(entry.subs[sub],
+          (idx, val)=> renameDishInSub(cat, sub, idx, val),
+          (idx)=> deleteDishInSub(cat, sub, idx)
+        ));
+
+        const addRow = document.createElement('div');
+        addRow.className = 'add-dish-row';
+        const addInput = document.createElement('input');
+        addInput.type = 'text';
+        addInput.id = 'newDish__' + catKey(cat) + '__' + catKey(sub);
+        addInput.placeholder = 'नई डिश का नाम…';
+        addInput.addEventListener('keydown', (e)=>{ if(e.key==='Enter') addDishInSub(cat, sub); });
+        const addBtn = document.createElement('button');
+        addBtn.className = 'btn-ghost btn-sm';
+        addBtn.textContent = '+ Add';
+        addBtn.addEventListener('click', ()=> addDishInSub(cat, sub));
+        addRow.appendChild(addInput);
+        addRow.appendChild(addBtn);
+        subBlock.appendChild(addRow);
+
+        card.appendChild(subBlock);
+      });
+
+      // ---- Add new sub-category row ----
+      const addSubRow = document.createElement('div');
+      addSubRow.className = 'add-sub-row';
+      const addSubInput = document.createElement('input');
+      addSubInput.type = 'text';
+      addSubInput.id = 'newSub__' + catKey(cat);
+      addSubInput.placeholder = 'नई उप-श्रेणी का नाम…';
+      addSubInput.addEventListener('keydown', (e)=>{ if(e.key==='Enter') addSubcategory(cat); });
+      const addSubBtn = document.createElement('button');
+      addSubBtn.className = 'btn-ghost btn-sm';
+      addSubBtn.textContent = '+ नई उप-श्रेणी जोड़ें';
+      addSubBtn.addEventListener('click', ()=> addSubcategory(cat));
+      addSubRow.appendChild(addSubInput);
+      addSubRow.appendChild(addSubBtn);
+      card.appendChild(addSubRow);
+    }
 
     wrap.appendChild(card);
   });
@@ -347,7 +487,7 @@ async function init(){
   render();
   setStatus(Object.keys(catalog).length
     ? '☁ क्लाउड से लोड हो गया।'
-    : 'अभी कोई कैटलॉग सेव नहीं है — "Import Default Catalog" से शुरू करें।');
+    : 'अभी कोई कैटलॉग सेव नहीं है।');
 }
 </script>
 </body>
