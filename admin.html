@@ -177,9 +177,15 @@ async function loadFromCloud(){
 async function reloadFromCloud(){
   if(!confirm('क्लाउड से दोबारा लोड करें? अभी तक सेव न किए गए बदलाव खो जाएँगे।')) return;
   setStatus('लोड हो रहा है…');
-  await loadFromCloud();
-  render();
-  setStatus('☁ क्लाउड से लोड हो गया।');
+  try{
+    await loadFromCloud();
+    render();
+    setStatus('☁ क्लाउड से लोड हो गया।');
+  }catch(e){
+    console.error(e);
+    const code = e && e.code ? e.code : 'unknown';
+    setStatus(`⚠ लोड नहीं हो पाया — [${code}] ${e.message||e}`);
+  }
 }
 
 function importCatalogFile(file){
@@ -206,7 +212,9 @@ async function saveToCloud(){
     setStatus('☁ सेव हो गया — मुख्य ऐप में स्टाफ को अब यही सूची दिखेगी।');
   }catch(e){
     console.error(e);
-    setStatus('⚠ सेव नहीं हो पाया — इंटरनेट जाँचें और दोबारा कोशिश करें।');
+    const code = e && e.code ? e.code : 'unknown';
+    const msg = e && e.message ? e.message : String(e);
+    setStatus(`⚠ सेव नहीं हो पाया — [${code}] ${msg}`);
   }
 }
 
@@ -483,11 +491,17 @@ function render(){
 
 async function init(){
   setStatus('लोड हो रहा है…');
-  await loadFromCloud();
-  render();
-  setStatus(Object.keys(catalog).length
-    ? '☁ क्लाउड से लोड हो गया।'
-    : 'अभी कोई कैटलॉग सेव नहीं है।');
+  try{
+    await loadFromCloud();
+    render();
+    setStatus(Object.keys(catalog).length
+      ? '☁ क्लाउड से लोड हो गया।'
+      : 'अभी कोई कैटलॉग सेव नहीं है।');
+  }catch(e){
+    console.error(e);
+    const code = e && e.code ? e.code : 'unknown';
+    setStatus(`⚠ लोड नहीं हो पाया — [${code}] ${e.message||e}`);
+  }
 }
 </script>
 </body>
