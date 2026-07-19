@@ -796,6 +796,44 @@ async function resetAll(){
 // and hands it to the device's native share sheet — WhatsApp, Telegram, Print, Save, etc.
 // Each date's card is sliced into as many A4-shaped pages as its content needs, so long
 // menus still paginate correctly instead of being squeezed into one tall image.
+// Captures a (possibly very tall) menu-page piece-by-piece — one small html2canvas call per
+// heading/category-group — then stitches them into a single composite canvas ourselves.
+// This avoids asking html2canvas to rasterize one giant element in one shot, which is what
+// was failing (mobile browsers cap how large a single canvas render can be) on large orders.
+async function captureMenuPageTall(pageEl, scale){
+  const ignoreSvg = (el) => el.tagName === 'svg' || el.tagName === 'SVG';
+  const captureEl = async (el) => html2canvas(el, { scale, backgroundColor:'#ffffff', useCORS:true, ignoreElements: ignoreSvg });
+
+  const pieces = [];
+  for(const child of pageEl.children){
+    if(child.classList.contains('corner')) continue; // decorative only, safe to skip entirely
+    if(child.classList.contains('sections-flow')){
+      // break each meal-period further into its heading + each category-group, individually
+      for(const sec of child.children){
+        for(const part of sec.children){
+          pieces.push(await captureEl(part));
+        }
+      }
+    } else {
+      pieces.push(await captureEl(child));
+    }
+  }
+
+  const width = Math.max(...pieces.map(p=>p.width));
+  const totalHeight = pieces.reduce((sum,p)=> sum + p.height, 0);
+  const composite = document.createElement('canvas');
+  composite.width = width;
+  composite.height = totalHeight;
+  const ctx = composite.getContext('2d');
+  ctx.fillStyle = '#ffffff'; ctx.fillRect(0,0,width,totalHeight);
+  let y = 0;
+  for(const p of pieces){
+    ctx.drawImage(p, 0, y);
+    y += p.height;
+  }
+  return composite;
+}
+
 async function shareMenu(){
   const pageEls = [...document.querySelectorAll('#previewWrap .menu-page')];
   if(!pageEls.length){ alert('पहले "Generate Menu Card" दबाएँ।'); return; }
@@ -816,10 +854,7 @@ async function shareMenu(){
     const A4_RATIO = 0.70707; // width / height
 
     for(const pageEl of pageEls){
-      const canvas = await html2canvas(pageEl, {
-        scale:2, backgroundColor:'#ffffff', useCORS:true,
-        ignoreElements: (el) => el.tagName === 'svg' || el.tagName === 'SVG'
-      });
+      const canvas = await captureMenuPageTall(pageEl, 2);
       const W = canvas.width, H = canvas.height;
       const pageHpx = Math.round(W / A4_RATIO);
       let y = 0;
