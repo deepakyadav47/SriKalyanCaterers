@@ -67,9 +67,18 @@
     cursor:pointer;background:#fff;color:#7a6a52;
   }
   .cat-tab.active{background:var(--maroon);color:#fff;border-color:var(--maroon);}
-  .sub-tabs{display:flex;flex-wrap:wrap;gap:5px;margin:-2px 0 8px 12px;}
-  .cat-tab.sub{padding:3px 9px;font-size:.72rem;border-color:var(--gold-light);color:#8a7355;}
-  .cat-tab.sub.active{background:var(--gold);color:#fff;border-color:var(--gold);}
+  .sub-tabs-wrap{
+    display:none;background:#fdf7ea;border:1px solid var(--gold-light);border-left:3px solid var(--gold);
+    border-radius:6px;padding:8px 10px 9px;margin:-3px 0 10px 10px;
+  }
+  .sub-tabs-wrap.visible{display:block;}
+  .sub-tabs-label{font-size:.66rem;font-weight:700;color:#8a5a2b;text-transform:uppercase;letter-spacing:.05em;margin-bottom:6px;}
+  .sub-tabs{display:flex;flex-wrap:wrap;gap:6px;}
+  .cat-tab.sub{
+    padding:4px 11px;font-size:.76rem;border-radius:5px;border:1px solid var(--gold);
+    background:#fff;color:#8a5a2b;
+  }
+  .cat-tab.sub.active{background:var(--gold);color:#fff;border-color:var(--gold);font-weight:700;}
   .item-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(160px,1fr));gap:6px 10px;max-height:220px;overflow:auto;padding:8px;border:1px solid var(--line);border-radius:6px;background:#fffefb;}
   .item-opt{display:flex;align-items:center;gap:6px;font-size:.85rem;}
   .item-opt input{width:auto;}
@@ -248,14 +257,17 @@ function setStorageStatus(text){
 // ---------- Dish catalog (managed centrally via the admin page — this app only reads it) ----------
 function isGroup(catEntry){ return catEntry && !Array.isArray(catEntry) && catEntry.type === "group"; }
 
+function groupKey(majorCat, subCat){ return subCat ? majorCat+'|'+subCat : majorCat; }
+function groupLabel(majorCat, subCat){ return subCat ? `${majorCat} - ${subCat}` : majorCat; }
+
 function buildGroupOrder(){
   const order = [];
   Object.keys(CATALOG).forEach(cat=>{
     const entry = CATALOG[cat];
     if(isGroup(entry)){
-      Object.keys(entry.subs).forEach(sub=> order.push(sub));
+      Object.keys(entry.subs).forEach(sub=> order.push(groupKey(cat, sub)));
     } else {
-      order.push(cat);
+      order.push(groupKey(cat, ''));
     }
   });
   return order;
@@ -430,7 +442,10 @@ function addSection(dayId){
       </div>
     </div>
     <div class="cat-tabs">${catTabs}</div>
-    <div class="sub-tabs"></div>
+    <div class="sub-tabs-wrap">
+      <div class="sub-tabs-label">▸ उप-श्रेणी चुनें</div>
+      <div class="sub-tabs"></div>
+    </div>
     <div class="item-grid" data-current-cat="" data-current-sub=""></div>
     <div class="chips"></div>
   `;
@@ -457,22 +472,25 @@ function rebuildAllCatTabs(){
 // flat (legacy-compatible) categories are just a plain array of dish names.
 function switchCat(sid, cat){
   const secEl = document.getElementById(sid);
-  secEl.querySelectorAll('.cat-tab').forEach(t=> t.classList.toggle('active', t.textContent===cat));
+  secEl.querySelectorAll('.cat-tabs .cat-tab').forEach(t=> t.classList.toggle('active', t.textContent===cat));
   const grid = secEl.querySelector('.item-grid');
-  const subTabsWrap = secEl.querySelector('.sub-tabs');
+  const subTabsWrapOuter = secEl.querySelector('.sub-tabs-wrap');
+  const subTabsInner = secEl.querySelector('.sub-tabs');
   grid.dataset.currentCat = cat;
 
   const entry = CATALOG[cat];
   if(isGroup(entry)){
+    subTabsWrapOuter.classList.add('visible');
     const subNames = Object.keys(entry.subs);
     const firstSub = subNames[0];
-    subTabsWrap.innerHTML = subNames.map((s,i)=>
+    subTabsInner.innerHTML = subNames.map((s,i)=>
       `<div class="cat-tab sub ${i===0?'active':''}" onclick="switchSub('${sid}','${cat}','${s}')">${s}</div>`
     ).join('');
     grid.dataset.currentSub = firstSub || '';
     renderItemGrid(sid, firstSub ? entry.subs[firstSub] : []);
   } else {
-    subTabsWrap.innerHTML = '';
+    subTabsWrapOuter.classList.remove('visible');
+    subTabsInner.innerHTML = '';
     grid.dataset.currentSub = '';
     renderItemGrid(sid, entry || []);
   }
@@ -863,19 +881,19 @@ async function renderPreview(){
       const chips = [...secEl.querySelectorAll('.chip')];
       if(chips.length===0) return;
 
-      // group chosen items by category, preserving catalog category order
+      // group chosen items by category (major+sub composite key), preserving catalog order
       const grouped = {};
       chips.forEach(c=>{
-        const cat = c.dataset.cat || 'अन्य';
-        if(!grouped[cat]) grouped[cat]=[];
-        grouped[cat].push(c.dataset.item);
+        const key = groupKey(c.dataset.majorCat || c.dataset.cat || 'अन्य', c.dataset.subCat || '');
+        if(!grouped[key]) grouped[key] = { label: groupLabel(c.dataset.majorCat || c.dataset.cat || 'अन्य', c.dataset.subCat || ''), items: [] };
+        grouped[key].items.push(c.dataset.item);
       });
-      const orderedCats = [...catOrder.filter(c=>grouped[c]), ...Object.keys(grouped).filter(c=>!catOrder.includes(c))];
+      const orderedKeys = [...catOrder.filter(k=>grouped[k]), ...Object.keys(grouped).filter(k=>!catOrder.includes(k))];
 
-      let groupsHtml = orderedCats.map(cat=>`
+      let groupsHtml = orderedKeys.map(key=>`
         <div class="cat-group">
-          <h4>${cat}</h4>
-          <ul>${grouped[cat].map(i=>`<li>${i}</li>`).join('')}</ul>
+          <h4>${grouped[key].label}</h4>
+          <ul>${grouped[key].items.map(i=>`<li>${i}</li>`).join('')}</ul>
         </div>`).join('');
 
       secsHtml += `
