@@ -163,7 +163,7 @@ firebase.auth().onAuthStateChanged(user=>{
 });
 
 function setStatus(text){ document.getElementById('status').textContent = text; }
-function isGroup(entry){ return entry && !Array.isArray(entry) && entry.__group__; }
+function isGroup(entry){ return entry && !Array.isArray(entry) && entry.type === 'group'; }
 
 // ---------- Working state (in-memory until "Save All Changes" is pressed) ----------
 let catalog = {};
@@ -225,7 +225,7 @@ function addCategory(){
   const name = input.value.trim();
   if(!name) return;
   if(catalog[name]){ alert('यह कैटेगरी पहले से मौजूद है।'); return; }
-  catalog[name] = (type === 'group') ? { __group__: true, subs: {} } : [];
+  catalog[name] = (type === 'group') ? { type: 'group', subs: {} } : [];
   input.value = '';
   render();
 }
