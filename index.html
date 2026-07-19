@@ -843,19 +843,35 @@ async function shareMenu(){
     const pdfBlob = pdf.output('blob');
     const file = new File([pdfBlob], fileName, {type:'application/pdf'});
 
+    let shared = false;
     if(navigator.canShare && navigator.canShare({files:[file]})){
-      await navigator.share({ files:[file], title:'मेन्यू कार्ड', text:'श्री कल्याण कैटर्स — मेन्यू कार्ड' });
-    } else {
+      try{
+        await navigator.share({ files:[file], title:'मेन्यू कार्ड', text:'श्री कल्याण कैटर्स — मेन्यू कार्ड' });
+        shared = true;
+      }catch(shareErr){
+        if(shareErr && shareErr.name === 'AbortError'){ shared = true; /* user cancelled — not an error, don't fall back */ }
+        else{
+          console.error('navigator.share failed', shareErr);
+          // fall through to download below, so the person still gets a usable PDF
+        }
+      }
+    }
+    if(!shared){
       const url = URL.createObjectURL(pdfBlob);
       const a = document.createElement('a');
       a.href = url; a.download = fileName;
       document.body.appendChild(a); a.click(); a.remove();
       URL.revokeObjectURL(url);
-      alert('इस ब्राउज़र में सीधा शेयर सपोर्ट नहीं है, इसलिए PDF डाउनलोड कर दी गई है — अब इसे WhatsApp/Telegram पर मैन्युअली शेयर करें।');
+      if(!(navigator.canShare && navigator.canShare({files:[file]}))){
+        alert('इस ब्राउज़र में सीधा शेयर सपोर्ट नहीं है, इसलिए PDF डाउनलोड कर दी गई है — अब इसे WhatsApp/Telegram पर मैन्युअली शेयर करें।');
+      } else {
+        alert('सीधा शेयर नहीं हो पाया, इसलिए PDF डाउनलोड कर दी गई है — अब इसे WhatsApp/Telegram पर मैन्युअली शेयर करें।');
+      }
     }
   }catch(e){
-    if(e && e.name === 'AbortError'){ /* user cancelled the share sheet — not an error */ }
-    else { console.error(e); alert('शेयर करने में समस्या आई, कृपया दोबारा कोशिश करें।'); }
+    console.error(e);
+    const detail = e && e.message ? e.message : String(e);
+    alert(`शेयर करने में समस्या आई — [${detail}]\nकृपया दोबारा कोशिश करें।`);
   } finally {
     btn.textContent = original;
     btn.disabled = false;
