@@ -816,7 +816,10 @@ async function shareMenu(){
     const A4_RATIO = 0.70707; // width / height
 
     for(const pageEl of pageEls){
-      const canvas = await html2canvas(pageEl, { scale:2, backgroundColor:'#ffffff', useCORS:true });
+      const canvas = await html2canvas(pageEl, {
+        scale:2, backgroundColor:'#ffffff', useCORS:true,
+        ignoreElements: (el) => el.tagName === 'svg' || el.tagName === 'SVG'
+      });
       const W = canvas.width, H = canvas.height;
       const pageHpx = Math.round(W / A4_RATIO);
       let y = 0;
