@@ -126,7 +126,7 @@
   .head-row .center .venue-sub{font-weight:700;font-size:.85rem;color:#6b4a30;}
   .order-tag{font-weight:600;font-size:.72rem;color:#8a7a60;margin-top:3px;letter-spacing:.02em;}
   .divider{display:flex;align-items:center;gap:10px;margin:10px 0 16px;}
-  .divider .ln{flex:1;height:1px;background:linear-gradient(90deg,transparent,var(--gold),transparent);}
+  .divider .ln{flex:1;height:1px;background:linear-gradient(90deg,transparent,#b8894a,transparent);}
   .divider svg{width:16px;height:16px;flex-shrink:0;}
   .menu-title-wrap{text-align:center;margin:2px 0 18px;}
   .menu-title{
@@ -802,7 +802,18 @@ async function resetAll(){
 // was failing (mobile browsers cap how large a single canvas render can be) on large orders.
 async function captureMenuPageTall(pageEl, scale){
   const ignoreSvg = (el) => el.tagName === 'svg' || el.tagName === 'SVG';
-  const captureEl = async (el) => html2canvas(el, { scale, backgroundColor:'#ffffff', useCORS:true, ignoreElements: ignoreSvg });
+  const captureEl = async (el) => {
+    try{
+      return await html2canvas(el, { scale, backgroundColor:'#ffffff', useCORS:true, ignoreElements: ignoreSvg });
+    }catch(e){
+      // Re-throw with exactly which element broke, so if this ever happens again the error
+      // message itself tells us the culprit instead of another guessing round.
+      const tag = el.tagName ? el.tagName.toLowerCase() : '?';
+      const cls = el.className ? '.'+String(el.className).trim().replace(/\s+/g,'.') : '';
+      const text = (el.textContent||'').trim().slice(0,25);
+      throw new Error(`piece <${tag}${cls}> "${text}" — ${e.message}`);
+    }
+  };
 
   const pieces = [];
   const addPiece = async (el) => {
