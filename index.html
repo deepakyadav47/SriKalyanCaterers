@@ -805,17 +805,26 @@ async function captureMenuPageTall(pageEl, scale){
   const captureEl = async (el) => html2canvas(el, { scale, backgroundColor:'#ffffff', useCORS:true, ignoreElements: ignoreSvg });
 
   const pieces = [];
+  const addPiece = async (el) => {
+    const canvas = await captureEl(el);
+    // Some elements (e.g. the decorative emblem, which contains only an SVG that we deliberately
+    // skip rendering) collapse to zero size when captured in isolation. Skip those safely instead
+    // of letting a later drawImage() call crash on a zero-size canvas.
+    if(canvas.width > 0 && canvas.height > 0){ pieces.push(canvas); }
+  };
+
   for(const child of pageEl.children){
-    if(child.classList.contains('corner')) continue; // decorative only, safe to skip entirely
+    // decorative-only elements: skip entirely, they contribute no menu content
+    if(child.classList.contains('corner') || child.classList.contains('emblem')) continue;
     if(child.classList.contains('sections-flow')){
       // break each meal-period further into its heading + each category-group, individually
       for(const sec of child.children){
         for(const part of sec.children){
-          pieces.push(await captureEl(part));
+          await addPiece(part);
         }
       }
     } else {
-      pieces.push(await captureEl(child));
+      await addPiece(child);
     }
   }
 
@@ -832,6 +841,19 @@ async function captureMenuPageTall(pageEl, scale){
     y += p.height;
   }
   return composite;
+}
+
+// Fast path first (renders the whole card in one shot — proven reliable and quick, even for the
+// largest possible order). Falls back automatically to the slower piece-by-piece method only if
+// the fast path itself throws, as a safety net for any device-specific rendering quirks.
+async function captureMenuPage(pageEl, scale){
+  const ignoreSvg = (el) => el.tagName === 'svg' || el.tagName === 'SVG';
+  try{
+    return await html2canvas(pageEl, { scale, backgroundColor:'#ffffff', useCORS:true, ignoreElements: ignoreSvg });
+  }catch(e){
+    console.warn('Whole-page capture failed, falling back to piece-by-piece capture:', e);
+    return await captureMenuPageTall(pageEl, scale);
+  }
 }
 
 async function shareMenu(){
@@ -854,7 +876,7 @@ async function shareMenu(){
     const A4_RATIO = 0.70707; // width / height
 
     for(const pageEl of pageEls){
-      const canvas = await captureMenuPageTall(pageEl, 2);
+      const canvas = await captureMenuPage(pageEl, 2);
       const W = canvas.width, H = canvas.height;
       const pageHpx = Math.round(W / A4_RATIO);
       let y = 0;
