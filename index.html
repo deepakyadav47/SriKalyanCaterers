@@ -101,41 +101,40 @@
   /* ---- Preview / print output ---- */
   #previewWrap{margin-top:26px;}
   .menu-page{
-    background:#fff;border:2.5px solid var(--maroon-deep);border-radius:2px;
-    padding:34px 40px;margin-bottom:26px;position:relative;
+    width:100%;border-collapse:collapse;background:#fff;
+    border:1px solid #e9d3a3;margin-bottom:26px;
   }
-  .menu-page::before{
-    content:"";position:absolute;inset:7px;border:1px solid var(--gold);pointer-events:none;
-  }
-  .corner{position:absolute;width:46px;height:46px;pointer-events:none;}
-  .corner svg{width:100%;height:100%;}
-  .corner-tl{top:10px;left:10px;}
-  .corner-tr{top:10px;right:10px;transform:scaleX(-1);}
-  .corner-bl{bottom:10px;left:10px;transform:scaleY(-1);}
-  .corner-br{bottom:10px;right:10px;transform:scale(-1,-1);}
+  .menu-page td{padding:0;}
 
-  .om-line{text-align:center;font-size:.85rem;color:var(--maroon);margin-bottom:6px;letter-spacing:.04em;}
-  .emblem{display:flex;justify-content:center;margin-bottom:6px;}
-  .emblem svg{width:44px;height:44px;}
-  .biz-name{text-align:center;font-family:'Cormorant Garamond',serif;font-weight:700;font-size:2.1rem;color:var(--maroon-deep);margin:0 0 2px;}
-  .biz-mob{text-align:center;font-size:.85rem;color:#5c1a24;margin-bottom:14px;font-weight:600;}
-  .head-row{display:flex;justify-content:space-between;align-items:flex-start;font-size:.92rem;margin-bottom:8px;gap:10px;}
+  .ph-band{padding:24px 40px 14px;text-align:center;border-bottom:2px solid #b8894a;background:linear-gradient(180deg,#fffaf0,#ffffff);}
+  .ph-top-line{display:flex;align-items:center;justify-content:center;gap:14px;margin-bottom:10px;}
+  .ph-flourish{color:#b8894a;font-size:1.05rem;}
+  .om-line{font-size:.85rem;color:var(--maroon);letter-spacing:.04em;}
+  .emblem-badge{
+    width:46px;height:46px;border:1.5px solid #b8894a;border-radius:50%;margin:0 auto 8px;
+    display:flex;align-items:center;justify-content:center;position:relative;
+  }
+  .emblem-badge::before{content:"";position:absolute;inset:3px;border:1px solid #e9d3a3;border-radius:50%;}
+  .emblem-badge span{font-size:1.3rem;color:#b8894a;}
+  .biz-name{font-family:'Cormorant Garamond',serif;font-weight:700;font-size:2.1rem;color:var(--maroon-deep);margin:0 0 2px;}
+  .biz-mob{font-size:.85rem;color:#5c1a24;margin-bottom:14px;font-weight:600;}
+  .head-row{display:flex;justify-content:space-between;align-items:flex-start;font-size:.92rem;margin-bottom:8px;gap:10px;text-align:left;}
   .head-row .left,.head-row .right{width:30%;font-weight:700;color:var(--maroon-deep);}
   .head-row .right{text-align:right;}
   .head-row .center{text-align:center;width:40%;font-weight:700;color:var(--maroon-deep);}
   .head-row .center .venue-sub{font-weight:700;font-size:.85rem;color:#6b4a30;}
   .order-tag{font-weight:600;font-size:.72rem;color:#8a7a60;margin-top:3px;letter-spacing:.02em;}
-  .divider{display:flex;align-items:center;gap:10px;margin:10px 0 16px;}
+  .divider{display:flex;align-items:center;gap:10px;margin:10px 0 14px;}
   .divider .ln{flex:1;height:1px;background:linear-gradient(90deg,transparent,#b8894a,transparent);}
-  .divider svg{width:16px;height:16px;flex-shrink:0;}
-  .menu-title-wrap{text-align:center;margin:2px 0 18px;}
+  .divider .dot{width:7px;height:7px;background:#b8894a;transform:rotate(45deg);flex-shrink:0;}
   .menu-title{
     font-family:'Cormorant Garamond',serif;font-style:italic;font-weight:600;font-size:1.35rem;
     border-top:1px solid var(--maroon-deep);border-bottom:1px solid var(--maroon-deep);
     display:inline-flex;align-items:center;gap:10px;padding:4px 26px;color:var(--maroon-deep);
   }
-  .menu-title svg{width:16px;height:16px;}
+  .menu-title .fl{color:#b8894a;font-size:1rem;}
 
+  .pb-inner{padding:24px 40px;}
   .sections-flow{display:block;}
   .sec{margin-bottom:18px;width:100%;}
   .sec > h3{
@@ -143,7 +142,7 @@
     display:flex;align-items:center;gap:7px;border-bottom:1.5px solid var(--gold);padding-bottom:5px;
     break-after:avoid;
   }
-  .sec > h3 svg{width:15px;height:15px;flex-shrink:0;}
+  .sec > h3 .leaf{color:#b8894a;font-size:.9rem;flex-shrink:0;}
   .sec > h3 .mem{font-size:.82rem;font-weight:700;color:#6b4a30;}
   .cat-group{margin:0 0 10px 4px;break-inside:avoid;}
   .cat-group h4{
@@ -154,13 +153,19 @@
   .cat-group ul{list-style:none;margin:0;padding:0;column-count:2;column-gap:34px;}
   .cat-group li{font-size:.9rem;break-inside:avoid;margin-bottom:6px;padding-right:6px;}
   .cat-group li::before{content:"◆ ";color:var(--gold);font-size:.65rem;vertical-align:middle;}
-  .footer-line{border-top:1px solid var(--line);margin-top:14px;padding-top:8px;font-size:.86rem;font-weight:700;color:var(--maroon-deep);text-align:center;}
+
+  .pf-band{padding:10px 40px 16px;border-top:1px solid #e9d3a3;text-align:center;}
+  .footer-line{font-size:.86rem;font-weight:700;color:var(--maroon-deep);}
+  .footer-line .fl{color:#b8894a;margin:0 8px;}
 
   @media print{
     body{background:#fff;}
     .app > *:not(#previewWrap){display:none !important;}
     .toolbar{display:none !important;}
     .menu-page{break-after:page;box-shadow:none;}
+    thead{display:table-header-group;}
+    tfoot{display:table-footer-group;}
+    tbody{display:table-row-group;}
   }
 </style>
 </head>
@@ -350,46 +355,6 @@ async function setSeqIfHigher(seq){
 let currentOrderId = null;
 function updateOrderIdBadge(){
   document.getElementById('orderIdBadge').textContent = 'ऑर्डर आईडी: ' + (currentOrderId || '—');
-}
-
-// ---------- ICONS (elegant line-art SVGs) ----------
-function cornerIconSVG(){
-  return `<svg viewBox="0 0 46 46" xmlns="http://www.w3.org/2000/svg" fill="none">
-    <path d="M2 44 C2 20 20 2 44 2" stroke="#b8894a" stroke-width="1.4"/>
-    <path d="M2 34 C2 16 16 2 34 2" stroke="#b8894a" stroke-width="0.9"/>
-    <circle cx="6" cy="40" r="1.8" fill="#b8894a"/>
-    <circle cx="40" cy="6" r="1.8" fill="#b8894a"/>
-  </svg>`;
-}
-// Premium medallion: folded hands (Namaste) inside a thin double circle border
-function emblemSVG(){
-  return `<svg viewBox="0 0 60 60" xmlns="http://www.w3.org/2000/svg" fill="none">
-    <circle cx="30" cy="30" r="27" stroke="#b8894a" stroke-width="1"/>
-    <circle cx="30" cy="30" r="23" stroke="#b8894a" stroke-width="0.6"/>
-    <g stroke="#b8894a" stroke-width="1.3" stroke-linecap="round">
-      <path d="M30 44 C22 40 19 30 20 18 C24 22 27 26 30 30"/>
-      <path d="M30 44 C38 40 41 30 40 18 C36 22 33 26 30 30"/>
-      <path d="M20 18 C22 14 26 12 30 12 C30 18 30 24 30 30"/>
-      <path d="M40 18 C38 14 34 12 30 12 C30 18 30 24 30 30"/>
-      <line x1="24" y1="46" x2="36" y2="46"/>
-    </g>
-  </svg>`;
-}
-function dividerIconSVG(){
-  return `<svg viewBox="0 0 20 20" xmlns="http://www.w3.org/2000/svg" fill="none" stroke="#b8894a" stroke-width="1.2">
-    <path d="M10 1 L14 10 L10 19 L6 10 Z"/>
-  </svg>`;
-}
-function titleFlourishSVG(){
-  return `<svg viewBox="0 0 20 20" xmlns="http://www.w3.org/2000/svg" fill="none" stroke="#b8894a" stroke-width="1.1">
-    <path d="M2 10 Q10 2 18 10 Q10 18 2 10 Z"/>
-  </svg>`;
-}
-function leafIconSVG(){
-  return `<svg viewBox="0 0 20 20" xmlns="http://www.w3.org/2000/svg" fill="none" stroke="#b8894a" stroke-width="1.3">
-    <path d="M3 17 C3 9 9 3 17 3 C17 11 11 17 3 17 Z"/>
-    <path d="M3 17 C7 13 11 9 17 3"/>
-  </svg>`;
 }
 
 // ---------- Day / Section builders ----------
@@ -800,14 +765,16 @@ async function resetAll(){
 // heading/category-group — then stitches them into a single composite canvas ourselves.
 // This avoids asking html2canvas to rasterize one giant element in one shot, which is what
 // was failing (mobile browsers cap how large a single canvas render can be) on large orders.
-async function captureMenuPageTall(pageEl, scale){
+// Captures a (possibly very tall) element piece-by-piece — one small html2canvas call per
+// heading/category-group if it's the dish body, or per direct child otherwise — then stitches
+// them into a single composite canvas ourselves. Used as an automatic fallback if a plain
+// whole-element capture ever fails on a particular device.
+async function captureMenuPageTall(rootEl, scale){
   const ignoreSvg = (el) => el.tagName === 'svg' || el.tagName === 'SVG';
   const captureEl = async (el) => {
     try{
       return await html2canvas(el, { scale, backgroundColor:'#ffffff', useCORS:true, ignoreElements: ignoreSvg });
     }catch(e){
-      // Re-throw with exactly which element broke, so if this ever happens again the error
-      // message itself tells us the culprit instead of another guessing round.
       const tag = el.tagName ? el.tagName.toLowerCase() : '?';
       const cls = el.className ? '.'+String(el.className).trim().replace(/\s+/g,'.') : '';
       const text = (el.textContent||'').trim().slice(0,25);
@@ -818,26 +785,30 @@ async function captureMenuPageTall(pageEl, scale){
   const pieces = [];
   const addPiece = async (el) => {
     const canvas = await captureEl(el);
-    // Some elements (e.g. the decorative emblem, which contains only an SVG that we deliberately
-    // skip rendering) collapse to zero size when captured in isolation. Skip those safely instead
-    // of letting a later drawImage() call crash on a zero-size canvas.
     if(canvas.width > 0 && canvas.height > 0){ pieces.push(canvas); }
   };
 
-  for(const child of pageEl.children){
-    // decorative-only elements: skip entirely, they contribute no menu content
-    if(child.classList.contains('corner') || child.classList.contains('emblem')) continue;
-    if(child.classList.contains('sections-flow')){
-      // break each meal-period further into its heading + each category-group, individually
-      for(const sec of child.children){
-        for(const part of sec.children){
-          await addPiece(part);
-        }
-      }
+  const theadEl = rootEl.querySelector ? rootEl.querySelector('thead') : null;
+  const tfootEl = rootEl.querySelector ? rootEl.querySelector('tfoot') : null;
+  const sectionsFlow = (rootEl.classList && rootEl.classList.contains('sections-flow'))
+    ? rootEl : (rootEl.querySelector ? rootEl.querySelector('.sections-flow') : null);
+
+  if(theadEl){ await addPiece(theadEl); }
+
+  if(sectionsFlow){
+    // dish body: break each meal-period further into its heading + each category-group
+    for(const sec of sectionsFlow.children){
+      for(const part of sec.children){ await addPiece(part); }
+    }
+  } else if(!theadEl && !tfootEl){
+    if(rootEl.children && rootEl.children.length){
+      for(const child of rootEl.children){ await addPiece(child); }
     } else {
-      await addPiece(child);
+      await addPiece(rootEl);
     }
   }
+
+  if(tfootEl){ await addPiece(tfootEl); }
 
   const width = Math.max(...pieces.map(p=>p.width));
   const totalHeight = pieces.reduce((sum,p)=> sum + p.height, 0);
@@ -854,16 +825,16 @@ async function captureMenuPageTall(pageEl, scale){
   return composite;
 }
 
-// Fast path first (renders the whole card in one shot — proven reliable and quick, even for the
+// Fast path first (renders an element in one shot — proven reliable and quick, even for the
 // largest possible order). Falls back automatically to the slower piece-by-piece method only if
 // the fast path itself throws, as a safety net for any device-specific rendering quirks.
-async function captureMenuPage(pageEl, scale){
-  const ignoreSvg = (el) => el.tagName === 'svg' || el.tagName === 'SVG';
+async function captureMenuPage(el, scale){
+  const ignoreSvg = (e) => e.tagName === 'svg' || e.tagName === 'SVG';
   try{
-    return await html2canvas(pageEl, { scale, backgroundColor:'#ffffff', useCORS:true, ignoreElements: ignoreSvg });
+    return await html2canvas(el, { scale, backgroundColor:'#ffffff', useCORS:true, ignoreElements: ignoreSvg });
   }catch(e){
-    console.warn('Whole-page capture failed, falling back to piece-by-piece capture:', e);
-    return await captureMenuPageTall(pageEl, scale);
+    console.warn('Whole-element capture failed, falling back to piece-by-piece capture:', e);
+    return await captureMenuPageTall(el, scale);
   }
 }
 
@@ -886,9 +857,32 @@ async function shareMenu(){
     let pdf = null;
     const A4_RATIO = 0.70707; // width / height
 
+    // Note: printing (Print / Save as PDF) repeats the header and footer on every physical page
+    // automatically via the browser's native thead/tfoot support — free, instant, no JS involved.
+    // For this Share button, we capture the header band, dish body, and footer band as separate
+    // plain divs (html2canvas handles divs far better/faster than the outer <table> element),
+    // stack them into one composite (header once, footer once), then slice into A4 pages the
+    // simple way — matching the original fast, reliable behavior.
     for(const pageEl of pageEls){
-      const canvas = await captureMenuPage(pageEl, 2);
-      const W = canvas.width, H = canvas.height;
+      const headerEl = pageEl.querySelector('.ph-band');
+      const footerEl = pageEl.querySelector('.pf-band');
+      const bodyEl = pageEl.querySelector('.pb-inner');
+
+      const headerCanvas = await captureMenuPage(headerEl, 2);
+      const footerCanvas = await captureMenuPage(footerEl, 2);
+      const bodyCanvas = await captureMenuPage(bodyEl, 2);
+
+      const W = Math.max(headerCanvas.width, footerCanvas.width, bodyCanvas.width);
+      const totalH = headerCanvas.height + bodyCanvas.height + footerCanvas.height;
+      const canvas = document.createElement('canvas');
+      canvas.width = W; canvas.height = totalH;
+      const cctx = canvas.getContext('2d');
+      cctx.fillStyle = '#ffffff'; cctx.fillRect(0,0,W,totalH);
+      cctx.drawImage(headerCanvas, 0, 0);
+      cctx.drawImage(bodyCanvas, 0, headerCanvas.height);
+      cctx.drawImage(footerCanvas, 0, headerCanvas.height + bodyCanvas.height);
+
+      const H = canvas.height;
       const pageHpx = Math.round(W / A4_RATIO);
       let y = 0;
       while(y < H){
@@ -898,7 +892,7 @@ async function shareMenu(){
         const ctx = sliceCanvas.getContext('2d');
         ctx.fillStyle = '#ffffff'; ctx.fillRect(0,0,W,sliceH);
         ctx.drawImage(canvas, 0, y, W, sliceH, 0, 0, W, sliceH);
-        const imgData = sliceCanvas.toDataURL('image/jpeg', 0.92);
+        const imgData = sliceCanvas.toDataURL('image/jpeg', 0.9);
 
         if(!pdf){
           pdf = new jsPDF({ unit:'px', format:[W, pageHpx] });
@@ -985,36 +979,39 @@ async function renderPreview(){
 
       secsHtml += `
         <div class="sec">
-          <h3>${leafIconSVG()} ${name} ${members ? `<span class="mem">( ${members} मैम्बर )</span>` : ''}</h3>
+          <h3><span class="leaf">❧</span> ${name} ${members ? `<span class="mem">( ${members} मैम्बर )</span>` : ''}</h3>
           ${groupsHtml}
         </div>`;
     });
     if(!secsHtml) return;
     pagesHtml += `
-      <div class="menu-page">
-        <div class="corner corner-tl">${cornerIconSVG()}</div>
-        <div class="corner corner-tr">${cornerIconSVG()}</div>
-        <div class="corner corner-bl">${cornerIconSVG()}</div>
-        <div class="corner corner-br">${cornerIconSVG()}</div>
-
-        <div class="om-line">॥ श्री गणेशाय नम: ॥</div>
-        <div class="emblem">${emblemSVG()}</div>
-        <div class="biz-name">${bizName}</div>
-        <div class="biz-mob">${bizMob}</div>
-        <div class="head-row">
-          <div class="left">${clientName}</div>
-          <div class="center">${venueName}<div class="venue-sub">${venueAddr}</div></div>
-          <div class="right">${date}<div class="order-tag">Order: ${currentOrderId || '—'}</div></div>
-        </div>
-        <div class="divider">
-          <div class="ln"></div>${dividerIconSVG()}<div class="ln"></div>
-        </div>
-        <div class="menu-title-wrap">
-          <div class="menu-title">${titleFlourishSVG()} Menu ${titleFlourishSVG()}</div>
-        </div>
-        <div class="sections-flow">${secsHtml}</div>
-        <div class="footer-line">${bizName} &nbsp;•&nbsp; ${bizMob}</div>
-      </div>`;
+      <table class="menu-page">
+        <thead><tr><td>
+          <div class="ph-band">
+            <div class="ph-top-line"><span class="ph-flourish">❦</span><span class="om-line">॥ श्री गणेशाय नम: ॥</span><span class="ph-flourish">❦</span></div>
+            <div class="emblem-badge"><span>ॐ</span></div>
+            <div class="biz-name">${bizName}</div>
+            <div class="biz-mob">${bizMob}</div>
+            <div class="head-row">
+              <div class="left">${clientName}</div>
+              <div class="center">${venueName}<div class="venue-sub">${venueAddr}</div></div>
+              <div class="right">${date}<div class="order-tag">Order: ${currentOrderId || '—'}</div></div>
+            </div>
+            <div class="divider"><div class="ln"></div><div class="dot"></div><div class="ln"></div></div>
+            <div class="menu-title"><span class="fl">❧</span> Menu <span class="fl">❧</span></div>
+          </div>
+        </td></tr></thead>
+        <tfoot><tr><td>
+          <div class="pf-band">
+            <div class="footer-line">${bizName} <span class="fl">•</span> ${bizMob}</div>
+          </div>
+        </td></tr></tfoot>
+        <tbody><tr><td>
+          <div class="pb-inner">
+            <div class="sections-flow">${secsHtml}</div>
+          </div>
+        </td></tr></tbody>
+      </table>`;
   });
 
   const wrap = document.getElementById('previewWrap');
