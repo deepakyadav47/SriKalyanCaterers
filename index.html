@@ -857,51 +857,49 @@ async function shareMenu(){
     let pdf = null;
     const A4_RATIO = 0.70707; // width / height
 
-    // Note: printing (Print / Save as PDF) repeats the header and footer on every physical page
-    // automatically via the browser's native thead/tfoot support — free, instant, no JS involved.
-    // For this Share button, we capture the header band, dish body, and footer band as separate
-    // plain divs (html2canvas handles divs far better/faster than the outer <table> element),
-    // stack them into one composite (header once, footer once), then slice into A4 pages the
-    // simple way — matching the original fast, reliable behavior.
+    // Header and footer are captured once, then redrawn on every generated PDF page — like a
+    // letterhead — matching how native printing repeats them via thead/tfoot. A page margin is
+    // added around everything so text never touches the paper edge.
+    const MARGIN = 26; // px, at the capture scale below
     for(const pageEl of pageEls){
       const headerEl = pageEl.querySelector('.ph-band');
       const footerEl = pageEl.querySelector('.pf-band');
       const bodyEl = pageEl.querySelector('.pb-inner');
 
-      const headerCanvas = await captureMenuPage(headerEl, 2);
-      const footerCanvas = await captureMenuPage(footerEl, 2);
-      const bodyCanvas = await captureMenuPage(bodyEl, 2);
+      const headerCanvas = await captureMenuPage(headerEl, 1.5);
+      const footerCanvas = await captureMenuPage(footerEl, 1.5);
+      const bodyCanvas = await captureMenuPage(bodyEl, 1.5);
 
-      const W = Math.max(headerCanvas.width, footerCanvas.width, bodyCanvas.width);
-      const totalH = headerCanvas.height + bodyCanvas.height + footerCanvas.height;
-      const canvas = document.createElement('canvas');
-      canvas.width = W; canvas.height = totalH;
-      const cctx = canvas.getContext('2d');
-      cctx.fillStyle = '#ffffff'; cctx.fillRect(0,0,W,totalH);
-      cctx.drawImage(headerCanvas, 0, 0);
-      cctx.drawImage(bodyCanvas, 0, headerCanvas.height);
-      cctx.drawImage(footerCanvas, 0, headerCanvas.height + bodyCanvas.height);
-
-      const H = canvas.height;
+      const contentW = Math.max(headerCanvas.width, footerCanvas.width, bodyCanvas.width);
+      const W = contentW + MARGIN*2;
       const pageHpx = Math.round(W / A4_RATIO);
+      const headerH = headerCanvas.height;
+      const footerH = footerCanvas.height;
+      const bodyCapacity = Math.max(80, pageHpx - headerH - footerH - MARGIN*2);
+      const totalBodyH = bodyCanvas.height;
+
       let y = 0;
-      while(y < H){
-        const sliceH = Math.min(pageHpx, H - y);
-        const sliceCanvas = document.createElement('canvas');
-        sliceCanvas.width = W; sliceCanvas.height = sliceH;
-        const ctx = sliceCanvas.getContext('2d');
-        ctx.fillStyle = '#ffffff'; ctx.fillRect(0,0,W,sliceH);
-        ctx.drawImage(canvas, 0, y, W, sliceH, 0, 0, W, sliceH);
-        const imgData = sliceCanvas.toDataURL('image/jpeg', 0.9);
+      do{
+        const sliceH = Math.min(bodyCapacity, Math.max(0, totalBodyH - y));
+        const pageCanvas = document.createElement('canvas');
+        pageCanvas.width = W; pageCanvas.height = pageHpx;
+        const ctx = pageCanvas.getContext('2d');
+        ctx.fillStyle = '#ffffff'; ctx.fillRect(0,0,W,pageHpx);
+        ctx.drawImage(headerCanvas, MARGIN, MARGIN);
+        if(sliceH > 0){
+          ctx.drawImage(bodyCanvas, 0, y, contentW, sliceH, MARGIN, MARGIN + headerH, contentW, sliceH);
+        }
+        ctx.drawImage(footerCanvas, MARGIN, pageHpx - footerH - MARGIN);
+        const imgData = pageCanvas.toDataURL('image/jpeg', 0.88);
 
         if(!pdf){
           pdf = new jsPDF({ unit:'px', format:[W, pageHpx] });
         } else {
           pdf.addPage([W, pageHpx], 'p');
         }
-        pdf.addImage(imgData, 'JPEG', 0, 0, W, sliceH);
+        pdf.addImage(imgData, 'JPEG', 0, 0, W, pageHpx);
         y += sliceH;
-      }
+      } while(y < totalBodyH);
     }
 
     const fileName = `Menu_${currentOrderId || 'card'}.pdf`;
